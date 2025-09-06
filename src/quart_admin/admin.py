@@ -181,9 +181,17 @@ class QuartAdmin:
         """Get views organized by category."""
         return self._categories.copy()
 
-    def create_default_providers(self):
-        """Create default providers if none are set."""
-        if not self.auth_provider:
+    def create_default_providers(
+        self, skip_auth=False, skip_database=False, skip_forms=False
+    ):
+        """Create default providers if none are set.
+
+        Args:
+            skip_auth: Skip creating default auth provider
+            skip_database: Skip creating default database provider
+            skip_forms: Skip creating default forms provider
+        """
+        if not skip_auth and not self.auth_provider:
             from .auth.quart_auth import QuartAuthProvider
 
             try:
@@ -192,7 +200,7 @@ class QuartAdmin:
                 # QuartAuth not available, skip auth
                 pass
 
-        if not self.database_provider:
+        if not skip_database and not self.database_provider:
             from .database.sqlalchemy import SQLAlchemyProvider
 
             try:
@@ -203,7 +211,7 @@ class QuartAdmin:
                 # SQLAlchemy not available
                 pass
 
-        if not self.form_generator:
+        if not skip_forms and not self.form_generator:
             self.form_generator = WTFormsGenerator()
 
     @property
