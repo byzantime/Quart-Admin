@@ -1,0 +1,237 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Edit {{ view.name }} - {{ config.site_name }} Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-pencil-square me-2"></i>
+        Edit {{ view.name }}
+        {% if item_id %}
+        <small class="text-muted">#{{ item_id }}</small>
+        {% endif %}
+    </h1>
+
+    <div class="btn-toolbar mb-2 mb-md-0">
+        {% if view.can_view_details and item_id %}
+        <a href="{{ view.get_details_url(item_id) }}" class="btn btn-outline-info me-2">
+            <i class="bi bi-eye me-1"></i>
+            View Details
+        </a>
+        {% endif %}
+
+        <a href="{{ view.get_list_url() }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to {{ view.name }}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                {% if form %}
+                <!-- Form-based rendering -->
+                <form method="POST" action="{{ view.get_edit_url(item_id) }}">
+                    {% for field in form if field.name != 'csrf_token' %}
+                    <div class="mb-3">
+                        {{ field.label(class="form-label") }}
+
+                        {% if field.type == 'SelectField' %}
+                        {{ field(class="form-select" + (" is-invalid" if field.errors else "")) }}
+                        {% elif field.type == 'TextAreaField' %}
+                        {{ field(class="form-control" + (" is-invalid" if field.errors else ""), rows="4") }}
+                        {% elif field.type == 'BooleanField' %}
+                        <div class="form-check">
+                            {{ field(class="form-check-input" + (" is-invalid" if field.errors else "")) }}
+                            {{ field.label(class="form-check-label") }}
+                        </div>
+                        {% else %}
+                        {{ field(class="form-control" + (" is-invalid" if field.errors else "")) }}
+                        {% endif %}
+
+                        {% if field.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in field.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% if field.description %}
+                        <div class="form-text">{{ field.description }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <!-- CSRF Token -->
+                    {% if form.csrf_token %}
+                    {{ form.csrf_token }}
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            {% if view.can_delete and item_id %}
+                            <button type="button"
+                                    class="btn btn-outline-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteModal">
+                                <i class="bi bi-trash me-1"></i>
+                                Delete
+                            </button>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <a href="{{ view.get_list_url() }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>
+                                Update {{ view.name }}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                {% else %}
+                <!-- Fallback message -->
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Item not found or form configuration not available.
+                </div>
+                <a href="{{ view.get_list_url() }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>
+                    Back to {{ view.name }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Help
+                </h6>
+                <p class="card-text small text-muted">
+                    Modify the form fields to update this {{ view.name.lower() }}.
+                    Fields marked with <span class="text-danger">*</span> are required.
+                </p>
+                <p class="card-text small text-muted">
+                    Use the "Cancel" button to return to the {{ view.name.lower() }} list without saving changes.
+                </p>
+                {% if view.can_delete %}
+                <p class="card-text small text-muted">
+                    Use the "Delete" button to permanently remove this {{ view.name.lower() }}.
+                    <strong>This action cannot be undone.</strong>
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if item and item_id %}
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-clock-history me-2"></i>
+                    Record Info
+                </h6>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 small text-muted">ID:</dt>
+                    <dd class="col-sm-8 small"><code>{{ item_id }}</code></dd>
+
+                    {% if item.get('created_at') %}
+                    <dt class="col-sm-4 small text-muted">Created:</dt>
+                    <dd class="col-sm-8 small">
+                        {% if hasattr(item.created_at, 'strftime') %}
+                        {{ item.created_at.strftime('%Y-%m-%d %H:%M') }}
+                        {% else %}
+                        {{ item.created_at }}
+                        {% endif %}
+                    </dd>
+                    {% endif %}
+
+                    {% if item.get('updated_at') %}
+                    <dt class="col-sm-4 small text-muted">Updated:</dt>
+                    <dd class="col-sm-8 small">
+                        {% if hasattr(item.updated_at, 'strftime') %}
+                        {{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                        {% else %}
+                        {{ item.updated_at }}
+                        {% endif %}
+                    </dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+{% if view.can_delete and item_id %}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="bi bi-exclamation-triangle text-danger me-2"></i>
+                    Confirm Deletion
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this {{ view.name.lower() }}?</p>
+                <p class="text-muted small">
+                    <strong>This action cannot be undone.</strong>
+                    All data associated with this {{ view.name.lower() }} will be permanently removed.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ view.get_delete_url(item_id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>
+                        Delete {{ view.name }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Form validation and UX improvements
+document.addEventListener('DOMContentLoaded', function() {
+    // Track original form values for change detection
+    const form = document.querySelector('form');
+    let originalFormData = new FormData(form);
+    let formChanged = false;
+
+    // Track form changes
+    const inputs = form?.querySelectorAll('input, textarea, select');
+    inputs?.forEach(input => {
+        input.addEventListener('change', function() {
+            formChanged = true;
+        });
+    });
+
+    // Warn before leaving page with unsaved changes
+    window.addEventListener('beforeunload', function(e) {
+        if (formChanged && !form.submitted) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        }
+    });
+
+    // Don't warn when form is submitted
+    form?.addEventListener('submit', function() {
+        form.submitted = true;
+    });
+});
+</script>
+{% endblock %}

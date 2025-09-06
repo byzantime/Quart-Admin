@@ -1,0 +1,141 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Create {{ view.name }} - {{ config.site_name }} Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-plus-circle me-2"></i>
+        Create {{ view.name }}
+    </h1>
+
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ view.get_list_url() }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to {{ view.name }}
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                {% if form %}
+                <!-- Form-based rendering -->
+                <form method="POST" action="{{ view.get_create_url() }}">
+                    {% for field in form if field.name != 'csrf_token' %}
+                    <div class="mb-3">
+                        {{ field.label(class="form-label") }}
+
+                        {% if field.type == 'SelectField' %}
+                        {{ field(class="form-select" + (" is-invalid" if field.errors else "")) }}
+                        {% elif field.type == 'TextAreaField' %}
+                        {{ field(class="form-control" + (" is-invalid" if field.errors else ""), rows="4") }}
+                        {% elif field.type == 'BooleanField' %}
+                        <div class="form-check">
+                            {{ field(class="form-check-input" + (" is-invalid" if field.errors else "")) }}
+                            {{ field.label(class="form-check-label") }}
+                        </div>
+                        {% else %}
+                        {{ field(class="form-control" + (" is-invalid" if field.errors else "")) }}
+                        {% endif %}
+
+                        {% if field.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in field.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% if field.description %}
+                        <div class="form-text">{{ field.description }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <!-- CSRF Token -->
+                    {% if form.csrf_token %}
+                    {{ form.csrf_token }}
+                    {% endif %}
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ view.get_list_url() }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-lg me-1"></i>
+                            Create {{ view.name }}
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <!-- Fallback message -->
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Form configuration not available. Please configure a form generator or define model fields.
+                </div>
+                <a href="{{ view.get_list_url() }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>
+                    Back to {{ view.name }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Help
+                </h6>
+                <p class="card-text small text-muted">
+                    Fill out the form to create a new {{ view.name.lower() }}.
+                    Fields marked with <span class="text-danger">*</span> are required.
+                </p>
+                <p class="card-text small text-muted">
+                    Use the "Cancel" button to return to the {{ view.name.lower() }} list without saving.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Basic form validation and UX improvements
+document.addEventListener('DOMContentLoaded', function() {
+    // Focus first input field
+    const firstInput = document.querySelector('form input:not([type="hidden"]), form textarea, form select');
+    if (firstInput) {
+        firstInput.focus();
+    }
+
+    // Add unsaved changes warning
+    let formChanged = false;
+    const form = document.querySelector('form');
+    const inputs = form?.querySelectorAll('input, textarea, select');
+
+    inputs?.forEach(input => {
+        input.addEventListener('change', function() {
+            formChanged = true;
+        });
+    });
+
+    // Warn before leaving page with unsaved changes
+    window.addEventListener('beforeunload', function(e) {
+        if (formChanged && !document.querySelector('form').submitted) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        }
+    });
+
+    // Don't warn when form is submitted
+    form?.addEventListener('submit', function() {
+        form.submitted = true;
+    });
+});
+</script>
+{% endblock %}

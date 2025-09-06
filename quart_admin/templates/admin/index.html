@@ -1,0 +1,156 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Dashboard - {{ config.site_name }} Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-speedometer2 me-2"></i>
+        Dashboard
+    </h1>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-collection me-2"></i>
+                    Available Views
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if views %}
+                <div class="row">
+                    {% for view in views.values() %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-table me-2"></i>
+                                    {{ view.name }}
+                                </h6>
+                                {% if view.category %}
+                                <p class="card-text">
+                                    <small class="text-muted">Category: {{ view.category }}</small>
+                                </p>
+                                {% endif %}
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ view.get_list_url() }}" class="btn btn-outline-primary">
+                                        <i class="bi bi-list-ul me-1"></i>
+                                        List
+                                    </a>
+                                    {% if view.can_create %}
+                                    <a href="{{ view.get_create_url() }}" class="btn btn-outline-success">
+                                        <i class="bi bi-plus-lg me-1"></i>
+                                        Create
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle me-2"></i>
+                    No admin views have been configured yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    System Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-6">Views:</dt>
+                    <dd class="col-sm-6">{{ views|length }}</dd>
+                    
+                    <dt class="col-sm-6">Categories:</dt>
+                    <dd class="col-sm-6">{{ categories|length }}</dd>
+                    
+                    {% if admin.database_provider %}
+                    <dt class="col-sm-6">Database:</dt>
+                    <dd class="col-sm-6">
+                        <i class="bi bi-check-circle text-success"></i>
+                        Connected
+                    </dd>
+                    {% endif %}
+                    
+                    {% if admin.auth_provider %}
+                    <dt class="col-sm-6">Authentication:</dt>
+                    <dd class="col-sm-6">
+                        <i class="bi bi-shield-check text-success"></i>
+                        Enabled
+                    </dd>
+                    {% endif %}
+                    
+                    <dt class="col-sm-6">Version:</dt>
+                    <dd class="col-sm-6">{{ admin.__version__ }}</dd>
+                </dl>
+            </div>
+        </div>
+        
+        {% if categories|length > 1 %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-folder me-2"></i>
+                    Categories
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for category, category_views in categories.items() %}
+                <div class="mb-2">
+                    <strong>{{ category }}</strong>
+                    <span class="badge bg-secondary">{{ category_views|length }}</span>
+                    <ul class="list-unstyled mt-1 ms-3">
+                        {% for view in category_views %}
+                        <li>
+                            <a href="{{ view.get_list_url() }}" class="text-decoration-none">
+                                <i class="bi bi-arrow-right me-1"></i>
+                                {{ view.name }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-gear me-2"></i>
+                    Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    {% for view in views.values() if view.can_create %}
+                    <a href="{{ view.get_create_url() }}" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Create {{ view.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

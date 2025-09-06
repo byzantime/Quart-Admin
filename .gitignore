@@ -1,0 +1,11 @@
+# Ignore ruff cache
+*.ruff_cache
+
+# Ignore Python bytecode
+*.pyc
+
+# Ignore Python cache
+__pycache__
+
+# Ignore virtualenv
+.venv
