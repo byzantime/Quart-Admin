@@ -2,229 +2,292 @@
 
 {% block title %}{{ view.name }} Details - {{ config.site_name }} Admin{% endblock %}
 
+{% block extra_css %}
+<style>
+    body { --page-color: #8a2be2; --page-bg: #f8f4ff; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-eye me-2"></i>
-        {{ view.name }} Details
-        {% if item_id %}
-        <small class="text-muted">#{{ item_id }}</small>
-        {% endif %}
-    </h1>
-    
-    <div class="btn-toolbar mb-2 mb-md-0">
-        {% if view.can_edit and item_id %}
-        <a href="{{ view.get_edit_url(item_id) }}" class="btn btn-primary me-2">
-            <i class="bi bi-pencil me-1"></i>
-            Edit
-        </a>
-        {% endif %}
-        
-        {% if view.can_delete and item_id %}
-        <button type="button" 
-                class="btn btn-outline-danger me-2" 
-                data-bs-toggle="modal" 
-                data-bs-target="#deleteModal">
-            <i class="bi bi-trash me-1"></i>
-            Delete
-        </button>
-        {% endif %}
-        
-        <a href="{{ view.get_list_url() }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>
-            Back to {{ view.name }}
-        </a>
+<!-- Page Header - Details Purple -->
+<div class="page-header-accent border-b-2 border-gray-900 pb-3 mb-6 px-4 -mx-6">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center">
+            <i class="fas fa-file-alt text-2xl mr-4" style="color: var(--page-color);"></i>
+            <div>
+                <h1 class="text-3xl font-bold tracking-wide uppercase">{{ view.name }} Details</h1>
+                {% if item_id %}
+                <p class="text-gray-600 text-sm uppercase tracking-wider">Specification #{{ item_id }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="flex space-x-3">
+            {% if view.can_edit and item_id %}
+            <a href="{{ view.get_edit_url(item_id) }}" class="print-button-primary px-4 py-2 uppercase tracking-wider text-sm">
+                <i class="fas fa-edit mr-2"></i>
+                Edit
+            </a>
+            {% endif %}
+
+            {% if view.can_delete and item_id %}
+            <button type="button"
+                    onclick="showModal('deleteModal')"
+                    class="print-button text-red-600 border-red-600 hover:bg-red-600 hover:text-white px-4 py-2 uppercase tracking-wider text-sm">
+                <i class="fas fa-trash mr-2"></i>
+                Delete
+            </button>
+            {% endif %}
+
+            <a href="{{ view.get_list_url() }}" class="print-button px-4 py-2 uppercase tracking-wider text-sm">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Back to {{ view.name }}
+            </a>
+        </div>
     </div>
 </div>
 
 {% if item %}
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">{{ view.name }} Information</h5>
-                
-                {% if fields %}
-                <!-- Field-based rendering -->
-                <dl class="row">
-                    {% for field in fields %}
-                    <dt class="col-sm-3 text-muted">{{ field.label or field.name.replace('_', ' ').title() }}:</dt>
-                    <dd class="col-sm-9">
+<!-- Main Content Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Specification Sheet -->
+    <div class="lg:col-span-2">
+        <div class="spec-box p-8 bg-white">
+            <div class="border-b-2 border-gray-300 pb-4 mb-8">
+                <h2 class="text-xl font-bold uppercase tracking-wide">
+                    <i class="fas fa-clipboard-list mr-3"></i>
+                    Technical Specifications
+                </h2>
+                <p class="text-sm text-gray-600 mt-1">Complete record information and attributes</p>
+            </div>
+
+            {% if fields %}
+            <!-- Field-based rendering -->
+            <div class="space-y-6">
+                {% for field in fields %}
+                <div class="border-l-4 border-gray-300 pl-6">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-gray-700">
+                            {{ field.label or field.name.replace('_', ' ').title() }}
+                        </h3>
+                        {% if field.get('is_primary_key') %}
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded uppercase tracking-wider">Primary Key</span>
+                        {% elif field.get('is_relationship') %}
+                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded uppercase tracking-wider">Relationship</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="text-gray-900">
                         {% set field_value = item.get(field.name) %}
                         {% if field_value is none %}
-                        <span class="text-muted">—</span>
+                        <span class="text-gray-400 italic">No value specified</span>
                         {% elif field.get('is_primary_key') %}
-                        <code>{{ field_value }}</code>
+                        <span class="font-mono bg-gray-100 px-3 py-2 rounded border">{{ field_value }}</span>
                         {% elif field.type == 'boolean' %}
                         {% if field_value %}
-                        <span class="badge bg-success">
-                            <i class="bi bi-check-lg"></i> Yes
+                        <span class="inline-flex items-center bg-green-100 text-green-800 px-3 py-2 rounded">
+                            <i class="fas fa-check-circle mr-2"></i> Yes
                         </span>
                         {% else %}
-                        <span class="badge bg-secondary">
-                            <i class="bi bi-x-lg"></i> No
+                        <span class="inline-flex items-center bg-red-100 text-red-800 px-3 py-2 rounded">
+                            <i class="fas fa-times-circle mr-2"></i> No
                         </span>
                         {% endif %}
                         {% elif field.type == 'datetime' %}
-                        {% if hasattr(field_value, 'strftime') %}
-                        {{ field_value.strftime('%Y-%m-%d %H:%M:%S') }}
-                        <br><small class="text-muted">{{ field_value.strftime('%A, %B %d, %Y at %I:%M %p') }}</small>
-                        {% else %}
-                        {{ field_value }}
-                        {% endif %}
+                        <div>
+                            {% if field_value.strftime is defined %}
+                            <span class="font-mono">{{ field_value.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                            <br><span class="text-sm text-gray-500 mt-1">{{ field_value.strftime('%A, %B %d, %Y at %I:%M %p') }}</span>
+                            {% else %}
+                            <span class="font-mono">{{ field_value }}</span>
+                            {% endif %}
+                        </div>
                         {% elif field.type == 'date' %}
-                        {% if hasattr(field_value, 'strftime') %}
-                        {{ field_value.strftime('%Y-%m-%d') }}
-                        <br><small class="text-muted">{{ field_value.strftime('%A, %B %d, %Y') }}</small>
-                        {% else %}
-                        {{ field_value }}
-                        {% endif %}
+                        <div>
+                            {% if field_value.strftime is defined %}
+                            <span class="font-mono">{{ field_value.strftime('%Y-%m-%d') }}</span>
+                            <br><span class="text-sm text-gray-500 mt-1">{{ field_value.strftime('%A, %B %d, %Y') }}</span>
+                            {% else %}
+                            <span class="font-mono">{{ field_value }}</span>
+                            {% endif %}
+                        </div>
                         {% elif field.type == 'email' %}
-                        <a href="mailto:{{ field_value }}">{{ field_value }}</a>
+                        <a href="mailto:{{ field_value }}" class="text-blue-600 hover:text-blue-800 underline">
+                            <i class="fas fa-envelope mr-2"></i>{{ field_value }}
+                        </a>
                         {% elif field.type == 'url' %}
-                        <a href="{{ field_value }}" target="_blank" rel="noopener noreferrer">
+                        <a href="{{ field_value }}" target="_blank" rel="noopener noreferrer"
+                           class="text-blue-600 hover:text-blue-800 underline">
                             {{ field_value }}
-                            <i class="bi bi-box-arrow-up-right ms-1"></i>
+                            <i class="fas fa-external-link-alt ml-2"></i>
                         </a>
                         {% elif field.type == 'text' and field_value|length > 100 %}
-                        <div class="collapse" id="collapse{{ field.name }}">
-                            {{ field_value|nl2br }}
+                        <div>
+                            <div id="collapse{{ field.name }}" class="hidden">
+                                <p class="whitespace-pre-wrap">{{ field_value }}</p>
+                            </div>
+                            <div class="bg-gray-50 p-4 border border-gray-200 rounded">
+                                <p class="whitespace-pre-wrap">{{ field_value[:100] }}...</p>
+                                <button onclick="toggleText('{{ field.name }}')"
+                                        class="print-button px-3 py-1 mt-2 text-xs uppercase tracking-wider">
+                                    <span class="show-more">Show Full Text</span>
+                                    <span class="show-less hidden">Show Less</span>
+                                </button>
+                            </div>
                         </div>
-                        <a class="btn btn-link btn-sm p-0" 
-                           data-bs-toggle="collapse" 
-                           href="#collapse{{ field.name }}" 
-                           role="button" 
-                           aria-expanded="false">
-                            {{ field_value[:100] }}...
-                            <span class="collapsed-text">Show more</span>
-                            <span class="expanded-text">Show less</span>
-                        </a>
                         {% elif field.get('is_relationship') %}
-                        <span class="badge bg-info">{{ field_value }} (Relationship)</span>
+                        <span class="bg-purple-100 text-purple-800 px-3 py-2 rounded">{{ field_value }}</span>
                         {% else %}
-                        {{ field_value|nl2br if field_value else '' }}
+                        <div class="{% if field_value|string|length > 50 %}bg-gray-50 p-4 border border-gray-200 rounded{% endif %}">
+                            <span class="whitespace-pre-wrap">{{ field_value if field_value else '' }}</span>
+                        </div>
                         {% endif %}
-                    </dd>
-                    {% endfor %}
-                </dl>
-                {% else %}
-                <!-- Fallback: display all item attributes -->
-                <dl class="row">
-                    {% for key, value in item.items() %}
-                    <dt class="col-sm-3 text-muted">{{ key.replace('_', ' ').title() }}:</dt>
-                    <dd class="col-sm-9">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <!-- Fallback: display all item attributes -->
+            <div class="space-y-6">
+                {% for key, value in item.items() %}
+                <div class="border-l-4 border-gray-300 pl-6">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-gray-700 mb-2">
+                        {{ key.replace('_', ' ').title() }}
+                    </h3>
+
+                    <div class="text-gray-900">
                         {% if value is none %}
-                        <span class="text-muted">—</span>
+                        <span class="text-gray-400 italic">No value specified</span>
                         {% elif value is sameas true %}
-                        <span class="badge bg-success">
-                            <i class="bi bi-check-lg"></i> Yes
+                        <span class="inline-flex items-center bg-green-100 text-green-800 px-3 py-2 rounded">
+                            <i class="fas fa-check-circle mr-2"></i> Yes
                         </span>
                         {% elif value is sameas false %}
-                        <span class="badge bg-secondary">
-                            <i class="bi bi-x-lg"></i> No
+                        <span class="inline-flex items-center bg-red-100 text-red-800 px-3 py-2 rounded">
+                            <i class="fas fa-times-circle mr-2"></i> No
                         </span>
                         {% elif key.endswith('_id') or key == 'id' %}
-                        <code>{{ value }}</code>
+                        <span class="font-mono bg-gray-100 px-3 py-2 rounded border">{{ value }}</span>
                         {% elif key.endswith('_at') or key.endswith('_date') %}
-                        {% if hasattr(value, 'strftime') %}
-                        {{ value.strftime('%Y-%m-%d %H:%M:%S') }}
-                        <br><small class="text-muted">{{ value.strftime('%A, %B %d, %Y at %I:%M %p') }}</small>
-                        {% else %}
-                        {{ value }}
-                        {% endif %}
+                        <div>
+                            {% if value.strftime is defined %}
+                            <span class="font-mono">{{ value.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                            <br><span class="text-sm text-gray-500 mt-1">{{ value.strftime('%A, %B %d, %Y at %I:%M %p') }}</span>
+                            {% else %}
+                            <span class="font-mono">{{ value }}</span>
+                            {% endif %}
+                        </div>
                         {% elif key.endswith('_email') or '@' in (value|string) %}
-                        <a href="mailto:{{ value }}">{{ value }}</a>
+                        <a href="mailto:{{ value }}" class="text-blue-600 hover:text-blue-800 underline">
+                            <i class="fas fa-envelope mr-2"></i>{{ value }}
+                        </a>
                         {% elif key.endswith('_url') or value|string|match('^https?://') %}
-                        <a href="{{ value }}" target="_blank" rel="noopener noreferrer">
+                        <a href="{{ value }}" target="_blank" rel="noopener noreferrer"
+                           class="text-blue-600 hover:text-blue-800 underline">
                             {{ value }}
-                            <i class="bi bi-box-arrow-up-right ms-1"></i>
+                            <i class="fas fa-external-link-alt ml-2"></i>
                         </a>
                         {% else %}
-                        {{ value|nl2br if value else '' }}
+                        <div class="{% if value|length > 50 %}bg-gray-50 p-4 border border-gray-200 rounded{% endif %}">
+                            <span class="whitespace-pre-wrap">{{ value if value else '' }}</span>
+                        </div>
                         {% endif %}
-                    </dd>
-                    {% endfor %}
-                </dl>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Actions Sidebar -->
+    <div class="space-y-6">
+        <!-- Primary Actions -->
+        <div class="spec-box p-6 bg-white">
+            <div class="border-b-2 border-gray-300 pb-3 mb-4">
+                <h2 class="text-lg font-bold uppercase tracking-wide">
+                    <i class="fas fa-cogs mr-3"></i>
+                    Actions
+                </h2>
+            </div>
+
+            <div class="space-y-3">
+                {% if view.can_edit %}
+                <a href="{{ view.get_edit_url(item_id) }}"
+                   class="print-button-primary block text-center px-4 py-3 uppercase tracking-wider text-sm">
+                    <i class="fas fa-edit mr-2"></i>
+                    Edit {{ view.name }}
+                </a>
+                {% endif %}
+
+                {% if view.can_create %}
+                <a href="{{ view.get_create_url() }}"
+                   class="print-button block text-center px-4 py-3 text-green-600 border-green-600 hover:bg-green-600 hover:text-white uppercase tracking-wider text-sm">
+                    <i class="fas fa-plus mr-2"></i>
+                    Create New {{ view.name }}
+                </a>
+                {% endif %}
+
+                <a href="{{ view.get_list_url() }}"
+                   class="print-button block text-center px-4 py-3 uppercase tracking-wider text-sm">
+                    <i class="fas fa-list mr-2"></i>
+                    View All {{ view.name }}
+                </a>
+
+                {% if view.can_delete %}
+                <div class="border-t-2 border-red-200 pt-4 mt-6">
+                    <button type="button"
+                            onclick="showModal('deleteModal')"
+                            class="print-button block w-full text-center px-4 py-3 text-red-600 border-red-600 hover:bg-red-600 hover:text-white uppercase tracking-wider text-sm">
+                        <i class="fas fa-trash mr-2"></i>
+                        Delete {{ view.name }}
+                    </button>
+                </div>
                 {% endif %}
             </div>
         </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="card-title">
-                    <i class="bi bi-gear me-2"></i>
-                    Actions
-                </h6>
-                
-                <div class="d-grid gap-2">
-                    {% if view.can_edit %}
-                    <a href="{{ view.get_edit_url(item_id) }}" class="btn btn-primary">
-                        <i class="bi bi-pencil me-1"></i>
-                        Edit {{ view.name }}
-                    </a>
-                    {% endif %}
-                    
-                    {% if view.can_create %}
-                    <a href="{{ view.get_create_url() }}" class="btn btn-success">
-                        <i class="bi bi-plus-lg me-1"></i>
-                        Create New {{ view.name }}
-                    </a>
-                    {% endif %}
-                    
-                    <a href="{{ view.get_list_url() }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-list me-1"></i>
-                        View All {{ view.name }}
-                    </a>
-                    
-                    {% if view.can_delete %}
-                    <hr class="my-2">
-                    <button type="button" 
-                            class="btn btn-outline-danger" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#deleteModal">
-                        <i class="bi bi-trash me-1"></i>
-                        Delete {{ view.name }}
-                    </button>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        
+
+        <!-- Record Information -->
         {% if item_id %}
-        <div class="card mt-3">
-            <div class="card-body">
-                <h6 class="card-title">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Record Info
-                </h6>
-                <dl class="row mb-0">
-                    <dt class="col-sm-4 small text-muted">ID:</dt>
-                    <dd class="col-sm-8 small"><code>{{ item_id }}</code></dd>
-                    
-                    {% if item.get('created_at') %}
-                    <dt class="col-sm-4 small text-muted">Created:</dt>
-                    <dd class="col-sm-8 small">
-                        {% if hasattr(item.created_at, 'strftime') %}
+        <div class="spec-box p-6 bg-white">
+            <div class="border-b-2 border-gray-300 pb-3 mb-4">
+                <h2 class="text-lg font-bold uppercase tracking-wide">
+                    <i class="fas fa-database mr-3"></i>
+                    Record Information
+                </h2>
+            </div>
+
+            <div class="space-y-2">
+                <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                    <span class="font-medium text-gray-700">Record ID</span>
+                    <span class="font-mono bg-gray-100 px-2 py-1 rounded text-sm">{{ item_id }}</span>
+                </div>
+
+                {% if item.get('created_at') %}
+                <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                    <span class="font-medium text-gray-700">Created</span>
+                    <span class="text-sm text-gray-600">
+                        {% if item.created_at.strftime is defined %}
                         {{ item.created_at.strftime('%Y-%m-%d %H:%M') }}
                         {% else %}
                         {{ item.created_at }}
                         {% endif %}
-                    </dd>
-                    {% endif %}
-                    
-                    {% if item.get('updated_at') %}
-                    <dt class="col-sm-4 small text-muted">Updated:</dt>
-                    <dd class="col-sm-8 small">
-                        {% if hasattr(item.updated_at, 'strftime') %}
+                    </span>
+                </div>
+                {% endif %}
+
+                {% if item.get('updated_at') %}
+                <div class="flex justify-between items-center py-2">
+                    <span class="font-medium text-gray-700">Last Modified</span>
+                    <span class="text-sm text-gray-600">
+                        {% if item.updated_at.strftime is defined %}
                         {{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}
                         {% else %}
                         {{ item.updated_at }}
                         {% endif %}
-                    </dd>
-                    {% endif %}
-                </dl>
+                    </span>
+                </div>
+                {% endif %}
             </div>
         </div>
         {% endif %}
@@ -232,19 +295,18 @@
 </div>
 
 {% else %}
-<!-- Item not found -->
-<div class="row">
-    <div class="col-12">
-        <div class="alert alert-warning">
-            <i class="bi bi-exclamation-triangle me-2"></i>
-            <strong>{{ view.name }} not found</strong>
-            <p class="mb-0 mt-2">
-                The {{ view.name.lower() }} you're looking for doesn't exist or may have been deleted.
-            </p>
+<!-- Record Not Found -->
+<div class="spec-box p-12 bg-white text-center">
+    <div class="max-w-md mx-auto">
+        <i class="fas fa-exclamation-triangle text-6xl text-yellow-400 mb-6"></i>
+        <h3 class="text-xl font-bold text-gray-700 mb-4">{{ view.name }} Not Found</h3>
+        <div class="text-gray-600 mb-6">
+            <p>The {{ view.name.lower() }} you're looking for doesn't exist or may have been deleted.</p>
         </div>
-        
-        <a href="{{ view.get_list_url() }}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left me-1"></i>
+
+        <a href="{{ view.get_list_url() }}"
+           class="print-button px-6 py-3 uppercase tracking-wider text-sm">
+            <i class="fas fa-arrow-left mr-2"></i>
             Back to {{ view.name }}
         </a>
     </div>
@@ -253,45 +315,52 @@
 
 <!-- Delete Confirmation Modal -->
 {% if view.can_delete and item and item_id %}
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteModalLabel">
-                    <i class="bi bi-exclamation-triangle text-danger me-2"></i>
-                    Confirm Deletion
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div id="deleteModal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="spec-box bg-white max-w-lg mx-4 p-0 overflow-hidden">
+        <div class="border-b-2 border-red-600 bg-red-50 px-6 py-4">
+            <h3 class="text-lg font-bold uppercase tracking-wide text-red-900">
+                <i class="fas fa-exclamation-triangle mr-3"></i>
+                Confirm Deletion
+            </h3>
+        </div>
+
+        <div class="p-6">
+            <p class="text-gray-900 mb-4">Are you sure you want to delete this {{ view.name.lower() }}?</p>
+
+            <div class="bg-yellow-50 border border-yellow-200 p-4 mb-6">
+                <p class="text-sm text-yellow-800">
+                    <strong>This action cannot be undone.</strong>
+                    All data associated with this {{ view.name.lower() }} will be permanently removed.
+                </p>
             </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete this {{ view.name.lower() }}?</p>
-                <div class="alert alert-warning">
-                    <small>
-                        <strong>This action cannot be undone.</strong> 
-                        All data associated with this {{ view.name.lower() }} will be permanently removed.
-                    </small>
-                </div>
-                
-                <!-- Show key identifying info -->
+
+            <!-- Show key identifying info -->
+            <div class="bg-gray-100 p-4 mb-6 border-l-4 border-gray-400">
                 {% if item.get('name') %}
-                <p class="mb-0">
+                <p class="font-medium text-gray-900">
                     <strong>{{ view.name }}:</strong> {{ item.name }}
                 </p>
                 {% elif item.get('title') %}
-                <p class="mb-0">
+                <p class="font-medium text-gray-900">
                     <strong>{{ view.name }}:</strong> {{ item.title }}
                 </p>
                 {% else %}
-                <p class="mb-0">
-                    <strong>{{ view.name }} ID:</strong> <code>{{ item_id }}</code>
+                <p class="font-medium text-gray-900">
+                    <strong>{{ view.name }} ID:</strong>
+                    <span class="font-mono bg-white px-2 py-1 rounded">{{ item_id }}</span>
                 </p>
                 {% endif %}
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+
+            <div class="flex space-x-3 justify-end">
+                <button onclick="hideModal('deleteModal')"
+                        class="print-button px-6 py-2 uppercase tracking-wider text-sm">
+                    Cancel
+                </button>
                 <form method="POST" action="{{ view.get_delete_url(item_id) }}" style="display: inline;">
-                    <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-trash me-1"></i>
+                    <button type="submit"
+                            class="print-button text-red-600 border-red-600 hover:bg-red-600 hover:text-white px-6 py-2 uppercase tracking-wider text-sm">
+                        <i class="fas fa-trash mr-2"></i>
                         Delete {{ view.name }}
                     </button>
                 </form>
@@ -305,28 +374,21 @@
 {% block extra_js %}
 <script>
 // Handle collapsible text sections
-document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(element) {
-    element.addEventListener('click', function() {
-        const targetId = this.getAttribute('href').substring(1);
-        const target = document.getElementById(targetId);
-        const collapsedText = this.querySelector('.collapsed-text');
-        const expandedText = this.querySelector('.expanded-text');
-        
-        // Toggle text based on collapse state
-        target.addEventListener('show.bs.collapse', function() {
-            if (collapsedText && expandedText) {
-                collapsedText.style.display = 'none';
-                expandedText.style.display = 'inline';
-            }
-        });
-        
-        target.addEventListener('hide.bs.collapse', function() {
-            if (collapsedText && expandedText) {
-                collapsedText.style.display = 'inline';
-                expandedText.style.display = 'none';
-            }
-        });
-    });
-});
+function toggleText(fieldName) {
+    const collapseDiv = document.getElementById('collapse' + fieldName);
+    const button = event.target.closest('button');
+    const showMore = button.querySelector('.show-more');
+    const showLess = button.querySelector('.show-less');
+
+    if (collapseDiv.classList.contains('hidden')) {
+        collapseDiv.classList.remove('hidden');
+        showMore.classList.add('hidden');
+        showLess.classList.remove('hidden');
+    } else {
+        collapseDiv.classList.add('hidden');
+        showMore.classList.remove('hidden');
+        showLess.classList.add('hidden');
+    }
+}
 </script>
 {% endblock %}

@@ -2,127 +2,158 @@
 
 {% block title %}Dashboard - {{ config.site_name }} Admin{% endblock %}
 
+{% block extra_css %}
+<style>
+    body { --page-color: #ff6b35; --page-bg: #fff4f0; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-speedometer2 me-2"></i>
-        Dashboard
-    </h1>
+<!-- Page Header - Dashboard Orange -->
+<div class="page-header-accent border-b-2 border-gray-900 pb-3 mb-6 px-4 -mx-6">
+    <div class="flex items-center">
+        <i class="fas fa-tachometer-alt text-2xl mr-4" style="color: var(--page-color);"></i>
+        <div>
+            <h1 class="text-3xl font-bold tracking-wide">DASHBOARD</h1>
+            <p class="text-gray-600 text-sm uppercase tracking-wider">System Overview & Administration</p>
+        </div>
+    </div>
 </div>
 
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-collection me-2"></i>
+<!-- Main Content Grid - Magazine Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Available Views Section -->
+    <div class="lg:col-span-2">
+        <div class="spec-box p-6 bg-white">
+            <div class="border-b-2 border-gray-300 pb-3 mb-6">
+                <h2 class="text-xl font-bold uppercase tracking-wide">
+                    <i class="fas fa-folder-open mr-3"></i>
                     Available Views
-                </h5>
+                </h2>
+                <p class="text-sm text-gray-600 mt-1">Administrative interfaces for data management</p>
             </div>
-            <div class="card-body">
-                {% if views %}
-                <div class="row">
-                    {% for view in views.values() %}
-                    <div class="col-md-6 mb-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <h6 class="card-title">
-                                    <i class="bi bi-table me-2"></i>
-                                    {{ view.name }}
-                                </h6>
-                                {% if view.category %}
-                                <p class="card-text">
-                                    <small class="text-muted">Category: {{ view.category }}</small>
-                                </p>
-                                {% endif %}
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <a href="{{ view.get_list_url() }}" class="btn btn-outline-primary">
-                                        <i class="bi bi-list-ul me-1"></i>
-                                        List
-                                    </a>
-                                    {% if view.can_create %}
-                                    <a href="{{ view.get_create_url() }}" class="btn btn-outline-success">
-                                        <i class="bi bi-plus-lg me-1"></i>
-                                        Create
-                                    </a>
-                                    {% endif %}
-                                </div>
-                            </div>
+
+            {% if views %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for view in views.values() %}
+                <div class="border border-gray-300 bg-gray-50 p-4 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <h3 class="font-semibold text-gray-900">
+                                <i class="fas fa-table mr-2 text-gray-600"></i>
+                                {{ view.name }}
+                            </h3>
+                            {% if view.category %}
+                            <p class="text-xs text-gray-500 uppercase tracking-wider mt-1">
+                                {{ view.category }}
+                            </p>
+                            {% endif %}
                         </div>
                     </div>
-                    {% endfor %}
+
+                    <div class="flex space-x-2">
+                        <a href="{{ view.get_list_url() }}"
+                           class="print-button px-3 py-2 text-xs uppercase tracking-wider">
+                            <i class="fas fa-list mr-1"></i>
+                            List
+                        </a>
+                        {% if view.can_create %}
+                        <a href="{{ view.get_create_url() }}"
+                           class="print-button-primary px-3 py-2 text-xs uppercase tracking-wider">
+                            <i class="fas fa-plus mr-1"></i>
+                            Create
+                        </a>
+                        {% endif %}
+                    </div>
                 </div>
-                {% else %}
-                <div class="alert alert-info" role="alert">
-                    <i class="bi bi-info-circle me-2"></i>
-                    No admin views have been configured yet.
-                </div>
-                {% endif %}
+                {% endfor %}
             </div>
+            {% else %}
+            <div class="print-alert border-blue-600 bg-blue-50 px-6 py-4">
+                <div class="flex items-center">
+                    <i class="fas fa-info-circle text-blue-600 mr-3"></i>
+                    <p class="font-medium text-gray-900">No admin views have been configured yet.</p>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-info-circle me-2"></i>
-                    System Information
-                </h5>
+    <!-- System Information Sidebar -->
+    <div class="space-y-6">
+        <!-- System Status -->
+        <div class="spec-box p-6 bg-white">
+            <div class="border-b-2 border-gray-300 pb-3 mb-4">
+                <h2 class="text-lg font-bold uppercase tracking-wide">
+                    <i class="fas fa-info-circle mr-3"></i>
+                    System Status
+                </h2>
             </div>
-            <div class="card-body">
-                <dl class="row">
-                    <dt class="col-sm-6">Views:</dt>
-                    <dd class="col-sm-6">{{ views|length }}</dd>
-                    
-                    <dt class="col-sm-6">Categories:</dt>
-                    <dd class="col-sm-6">{{ categories|length }}</dd>
-                    
-                    {% if admin.database_provider %}
-                    <dt class="col-sm-6">Database:</dt>
-                    <dd class="col-sm-6">
-                        <i class="bi bi-check-circle text-success"></i>
-                        Connected
-                    </dd>
-                    {% endif %}
-                    
-                    {% if admin.auth_provider %}
-                    <dt class="col-sm-6">Authentication:</dt>
-                    <dd class="col-sm-6">
-                        <i class="bi bi-shield-check text-success"></i>
-                        Enabled
-                    </dd>
-                    {% endif %}
-                    
-                    <dt class="col-sm-6">Version:</dt>
-                    <dd class="col-sm-6">{{ admin.__version__ }}</dd>
-                </dl>
+
+            <div class="space-y-3">
+                <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                    <span class="font-medium text-gray-700">Views</span>
+                    <span class="font-mono bg-gray-100 px-2 py-1 rounded">{{ views|length }}</span>
+                </div>
+
+                <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                    <span class="font-medium text-gray-700">Categories</span>
+                    <span class="font-mono bg-gray-100 px-2 py-1 rounded">{{ categories|length }}</span>
+                </div>
+
+                {% if admin.database_provider %}
+                <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                    <span class="font-medium text-gray-700">Database</span>
+                    <span class="text-green-600 font-medium">
+                        <i class="fas fa-check-circle mr-1"></i>Connected
+                    </span>
+                </div>
+                {% endif %}
+
+                {% if admin.auth_provider %}
+                <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                    <span class="font-medium text-gray-700">Authentication</span>
+                    <span class="text-green-600 font-medium">
+                        <i class="fas fa-shield-alt mr-1"></i>Enabled
+                    </span>
+                </div>
+                {% endif %}
+
+                <div class="flex justify-between items-center py-2">
+                    <span class="font-medium text-gray-700">Version</span>
+                    <span class="font-mono bg-gray-100 px-2 py-1 rounded">{{ admin.__version__ }}</span>
+                </div>
             </div>
         </div>
-        
+
+        <!-- Categories Directory -->
         {% if categories|length > 1 %}
-        <div class="card mt-3">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-folder me-2"></i>
-                    Categories
-                </h5>
+        <div class="spec-box p-6 bg-white">
+            <div class="border-b-2 border-gray-300 pb-3 mb-4">
+                <h2 class="text-lg font-bold uppercase tracking-wide">
+                    <i class="fas fa-folder mr-3"></i>
+                    Directory
+                </h2>
             </div>
-            <div class="card-body">
+
+            <div class="space-y-4">
                 {% for category, category_views in categories.items() %}
-                <div class="mb-2">
-                    <strong>{{ category }}</strong>
-                    <span class="badge bg-secondary">{{ category_views|length }}</span>
-                    <ul class="list-unstyled mt-1 ms-3">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-semibold text-gray-900">{{ category }}</h3>
+                        <span class="bg-gray-200 text-gray-700 px-2 py-1 rounded font-mono text-xs">{{ category_views|length }}</span>
+                    </div>
+                    <div class="pl-4 space-y-1">
                         {% for view in category_views %}
-                        <li>
-                            <a href="{{ view.get_list_url() }}" class="text-decoration-none">
-                                <i class="bi bi-arrow-right me-1"></i>
+                        <div class="flex items-center">
+                            <i class="fas fa-chevron-right text-gray-400 mr-2 text-xs"></i>
+                            <a href="{{ view.get_list_url() }}"
+                               class="text-gray-700 hover:text-gray-900 hover:underline text-sm">
                                 {{ view.name }}
                             </a>
-                        </li>
+                        </div>
                         {% endfor %}
-                    </ul>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
@@ -131,26 +162,33 @@
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-gear me-2"></i>
-                    Quick Actions
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="d-flex flex-wrap gap-2">
-                    {% for view in views.values() if view.can_create %}
-                    <a href="{{ view.get_create_url() }}" class="btn btn-outline-primary">
-                        <i class="bi bi-plus-lg me-1"></i>
-                        Create {{ view.name }}
-                    </a>
-                    {% endfor %}
-                </div>
-            </div>
+<!-- Quick Actions Section -->
+<div class="mt-8">
+    <div class="spec-box p-6 bg-white">
+        <div class="border-b-2 border-gray-300 pb-3 mb-6">
+            <h2 class="text-xl font-bold uppercase tracking-wide">
+                <i class="fas fa-bolt mr-3"></i>
+                Quick Actions
+            </h2>
+            <p class="text-sm text-gray-600 mt-1">Create new entries across all available views</p>
         </div>
+
+        {% if views.values() and views.values()|selectattr('can_create')|list %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for view in views.values() if view.can_create %}
+            <a href="{{ view.get_create_url() }}"
+               class="print-button-primary px-4 py-3 text-center block hover:shadow-md transition-shadow">
+                <i class="fas fa-plus mr-2"></i>
+                <span class="uppercase tracking-wider text-sm">Create {{ view.name }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-8 text-gray-500">
+            <i class="fas fa-info-circle text-2xl mb-3"></i>
+            <p>No create actions available</p>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
