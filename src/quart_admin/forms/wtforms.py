@@ -88,18 +88,14 @@ class WTFormsGenerator(FormGenerator):
     def get_field_for_column(self, column_info: Dict[str, Any], **kwargs) -> Any:
         """Get WTForms field for database column."""
         try:
-            from wtforms import (
-                BooleanField,
-                DateTimeField,
-                IntegerField,
-                StringField,
-                TextAreaField,
-            )
-            from wtforms.validators import (
-                DataRequired,
-                Length,
-                Optional as OptionalValidator,
-            )
+            from wtforms import BooleanField
+            from wtforms import DateTimeField
+            from wtforms import IntegerField
+            from wtforms import StringField
+            from wtforms import TextAreaField
+            from wtforms.validators import DataRequired
+            from wtforms.validators import Length
+            from wtforms.validators import Optional as OptionalValidator
         except ImportError as err:
             raise ImportError(
                 "WTForms is not installed. Install with: pip install quart-admin[wtforms]"

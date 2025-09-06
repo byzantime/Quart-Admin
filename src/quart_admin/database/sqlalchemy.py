@@ -151,7 +151,8 @@ class SQLAlchemyProvider(DatabaseProvider):
     async def count(self, model: Type, session: Any, **filters) -> int:
         """Count SQLAlchemy records."""
         try:
-            from sqlalchemy import func, select
+            from sqlalchemy import func
+            from sqlalchemy import select
         except ImportError as err:
             raise ImportError(
                 "SQLAlchemy is not installed. Install with: pip install quart-admin[sqlalchemy]"
