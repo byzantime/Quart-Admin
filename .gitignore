@@ -9,3 +9,6 @@ __pycache__
 
 # Ignore virtualenv
 .venv
+
+# Ignore LLM tools
+.claude
