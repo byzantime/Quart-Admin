@@ -24,6 +24,33 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 keywords = ["quart", "admin", "crud", "async", "web", "interface"]
+dependencies = [
+    "quart>=0.20.0",
+]
+
+[project.optional-dependencies]
+sqlalchemy = [
+    "sqlalchemy[asyncio]>=2.0.43",
+]
+wtforms = [
+    "wtforms>=3.2.1",
+    "flask-wtf>=1.2.2",
+]
+auth = [
+    "quart-auth>=0.11.0",
+]
+all = [
+    "sqlalchemy[asyncio]>=2.0.43",
+    "wtforms>=3.2.1",
+    "flask-wtf>=1.2.2",
+    "quart-auth>=0.11.0",
+]
+dev = [
+    "pytest>=8.3.4",
+    "pytest-asyncio>=0.26.0",
+    "black>=25.1.0",
+    "ruff>=0.12.7",
+]
 
 [tool.black]
 line-length = 88
@@ -35,18 +62,6 @@ profile = "black"
 multi_line_output = 3
 line_length = 88
 force-single-line = true
-
-[tool.mypy]
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
 
 [tool.ruff]
 target-version = "py38"
