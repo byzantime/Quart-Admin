@@ -8,9 +8,6 @@ from typing import List
 from typing import Optional
 from typing import Type
 
-from sqlalchemy import func
-from sqlalchemy import select
-
 from .base import DatabaseProvider
 
 
@@ -44,6 +41,13 @@ class SQLAlchemyProvider(DatabaseProvider):
         self, model: Type, session: Any, **filters
     ) -> List[Dict[str, Any]]:
         """Get all records for a SQLAlchemy model."""
+        try:
+            from sqlalchemy import select
+        except ImportError as err:
+            raise ImportError(
+                "SQLAlchemy is not installed. Install with: pip install quart-admin[sqlalchemy]"
+            ) from err
+
         query = select(model)
 
         # Handle special filters
@@ -66,6 +70,13 @@ class SQLAlchemyProvider(DatabaseProvider):
         self, model: Type, session: Any, pk_values: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
         """Get single SQLAlchemy record by primary key values."""
+        try:
+            from sqlalchemy import select
+        except ImportError as err:
+            raise ImportError(
+                "SQLAlchemy is not installed. Install with: pip install quart-admin[sqlalchemy]"
+            ) from err
+
         query = select(model)
         for key, value in pk_values.items():
             query = query.where(getattr(model, key) == value)
@@ -85,6 +96,13 @@ class SQLAlchemyProvider(DatabaseProvider):
         self, model: Type, session: Any, pk_values: Dict[str, Any], **data
     ) -> Dict[str, Any]:
         """Update existing SQLAlchemy record."""
+        try:
+            from sqlalchemy import select
+        except ImportError as err:
+            raise ImportError(
+                "SQLAlchemy is not installed. Install with: pip install quart-admin[sqlalchemy]"
+            ) from err
+
         query = select(model)
         for key, value in pk_values.items():
             query = query.where(getattr(model, key) == value)
@@ -110,6 +128,13 @@ class SQLAlchemyProvider(DatabaseProvider):
         self, model: Type, session: Any, pk_values: Dict[str, Any]
     ) -> bool:
         """Delete SQLAlchemy record by primary key values."""
+        try:
+            from sqlalchemy import select
+        except ImportError as err:
+            raise ImportError(
+                "SQLAlchemy is not installed. Install with: pip install quart-admin[sqlalchemy]"
+            ) from err
+
         query = select(model)
         for key, value in pk_values.items():
             query = query.where(getattr(model, key) == value)
@@ -125,6 +150,13 @@ class SQLAlchemyProvider(DatabaseProvider):
 
     async def count(self, model: Type, session: Any, **filters) -> int:
         """Count SQLAlchemy records."""
+        try:
+            from sqlalchemy import func, select
+        except ImportError as err:
+            raise ImportError(
+                "SQLAlchemy is not installed. Install with: pip install quart-admin[sqlalchemy]"
+            ) from err
+
         query = select(func.count()).select_from(model)
 
         # Handle special filters

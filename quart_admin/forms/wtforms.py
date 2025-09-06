@@ -8,16 +8,6 @@ from typing import List
 from typing import Optional
 from typing import Type
 
-from flask_wtf import FlaskForm
-from wtforms import BooleanField
-from wtforms import DateTimeField
-from wtforms import IntegerField
-from wtforms import StringField
-from wtforms import TextAreaField
-from wtforms.validators import DataRequired
-from wtforms.validators import Length
-from wtforms.validators import Optional as OptionalValidator
-
 from .base import FormGenerator
 
 
@@ -37,6 +27,13 @@ class WTFormsGenerator(FormGenerator):
         **kwargs,
     ) -> Any:
         """Create WTForms form for model using intelligent field generation."""
+        try:
+            from flask_wtf import FlaskForm
+        except ImportError as err:
+            raise ImportError(
+                "Flask-WTF and WTForms are not installed. Install with: pip install quart-admin[wtforms]"
+            ) from err
+
         if excluded_columns is None:
             excluded_columns = []
         base_class = FlaskForm
@@ -90,6 +87,24 @@ class WTFormsGenerator(FormGenerator):
 
     def get_field_for_column(self, column_info: Dict[str, Any], **kwargs) -> Any:
         """Get WTForms field for database column."""
+        try:
+            from wtforms import (
+                BooleanField,
+                DateTimeField,
+                IntegerField,
+                StringField,
+                TextAreaField,
+            )
+            from wtforms.validators import (
+                DataRequired,
+                Length,
+                Optional as OptionalValidator,
+            )
+        except ImportError as err:
+            raise ImportError(
+                "WTForms is not installed. Install with: pip install quart-admin[wtforms]"
+            ) from err
+
         column_type = column_info.get("type", "").lower()
         column_name = column_info.get("name", "")
         nullable = column_info.get("nullable", True)
