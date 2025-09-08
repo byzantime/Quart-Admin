@@ -147,6 +147,7 @@ class SQLAlchemyProvider(DatabaseProvider):
             return False
 
         await session.delete(instance)
+        await session.commit()
         return True
 
     async def count(self, model: Type, session: Any, **filters) -> int:
