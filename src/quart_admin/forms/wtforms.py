@@ -55,6 +55,9 @@ class WTFormsGenerator(FormGenerator):
             if excluded_columns and column_name in excluded_columns:
                 continue
 
+            if field_info.get("primary_key", False) and not obj:
+                continue
+
             field = self.get_field_for_column(field_info)
             setattr(DynamicForm, column_name, field)
 
@@ -71,18 +74,24 @@ class WTFormsGenerator(FormGenerator):
             for column_name, value in obj.items():
                 if column_name in datetime_fields and isinstance(value, str) and value:
                     try:
-                        # SQLAlchemy typically returns ISO format: "2023-01-01T12:00:00"
-                        value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                        if value.endswith("Z"):
+                            value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                        elif "." in value and "T" in value:
+                            value = datetime.fromisoformat(value)
+                        else:
+                            value = datetime.fromisoformat(value)
                     except ValueError:
-                        # Keep original string if parsing fails
                         pass
 
                 converted_obj[column_name] = value
 
             obj = SimpleNamespace(**converted_obj)
 
-        # Create form instance
-        form = DynamicForm(obj=obj, **kwargs)
+        if obj:
+            form = DynamicForm(obj=obj, **kwargs)
+        else:
+            form = DynamicForm(**kwargs)
+
         return form
 
     def get_field_for_column(self, column_info: Dict[str, Any], **kwargs) -> Any:
@@ -124,7 +133,10 @@ class WTFormsGenerator(FormGenerator):
             )
         elif "datetime" in column_type or "timestamp" in column_type:
             return DateTimeField(
-                column_name.replace("_", " ").title(), validators=validators, **kwargs
+                column_name.replace("_", " ").title(),
+                validators=validators,
+                format="%Y-%m-%d %H:%M:%S.%f",
+                **kwargs,
             )
         else:
             # Default to string field

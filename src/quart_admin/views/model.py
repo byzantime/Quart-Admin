@@ -155,22 +155,14 @@ class ModelView(AdminView):
         if not self.database_provider:
             return await super().create_view()
 
-        # For GET requests or when validation fails, create form with any submitted data
-        obj_data = None
-        if request.method == "POST":
-            # Use form data to preserve values on validation failure
-            obj_data = dict(request.form)
-
         form = self.form_generator.create_form(
             self.model,
             self.database_provider,
-            obj=obj_data,
             excluded_columns=self.form_excluded_columns,
         )
 
         if form.validate_on_submit():
             async with self.get_database_session() as session:
-                # Extract form data
                 form_data = {}
                 for field in form:
                     if field.name != "csrf_token" and field.data is not None:
@@ -181,6 +173,10 @@ class ModelView(AdminView):
 
                 await flash(f"{self.name} created successfully!", "success")
                 return redirect(self.get_list_url())
+        elif request.method == "POST":
+            for field_name, errors in form.errors.items():
+                for error in errors:
+                    await flash(f"{field_name}: {error}", "error")
 
         return await render_template(
             self.form_template,
@@ -197,18 +193,17 @@ class ModelView(AdminView):
         if not self.database_provider:
             return await super().edit_view(id)
 
-        async with self.get_database_session() as session:
-            # Get primary key fields and build pk_values dict
-            pk_fields = self.database_provider.get_primary_key_fields(self.model)
-            if len(pk_fields) == 1:
-                pk_values = {pk_fields[0]: id}
-            else:
-                # For composite keys, this would need to be handled differently
-                # For now, assume single primary key
-                raise ValueError(
-                    "Composite primary keys not yet supported in edit_view"
-                )
+        # Get primary key fields and build pk_values dict
+        pk_fields = self.database_provider.get_primary_key_fields(self.model)
+        if len(pk_fields) == 1:
+            pk_values = {pk_fields[0]: id}
+        else:
+            # For composite keys, this would need to be handled differently
+            # For now, assume single primary key
+            raise ValueError("Composite primary keys not yet supported in edit_view")
 
+        # First, get the item to edit (separate session context)
+        async with self.get_database_session() as session:
             item = await self.database_provider.get_by_pk(
                 self.model, session, pk_values
             )
@@ -217,40 +212,43 @@ class ModelView(AdminView):
                 await flash(f"{self.name} not found", "error")
                 return redirect(self.get_list_url())
 
-            form = self.form_generator.create_form(
-                self.model,
-                self.database_provider,
-                obj=item,
-                excluded_columns=self.form_excluded_columns,
-            )
+        # Create form with the retrieved item
+        form = self.form_generator.create_form(
+            self.model,
+            self.database_provider,
+            obj=item,
+            excluded_columns=self.form_excluded_columns,
+        )
 
-            if form.validate_on_submit():
-                # Get primary key field names to exclude from form data
+        if form.validate_on_submit():
+            async with self.get_database_session() as session:
                 excluded_fields = {"csrf_token"} | set(pk_fields)
 
-                # Extract form data, excluding primary keys and csrf_token
                 form_data = {}
                 for field in form:
-                    if field.name not in excluded_fields and field.data is not None:
+                    if field.name not in excluded_fields:
                         form_data[field.name] = field.data
 
-                # Update record
                 await self.database_provider.update(
                     self.model, session, pk_values, **form_data
                 )
 
                 await flash(f"{self.name} updated successfully!", "success")
                 return redirect(self.get_list_url())
+        elif request.method == "POST":
+            for field_name, errors in form.errors.items():
+                for error in errors:
+                    await flash(f"{field_name}: {error}", "error")
 
-            return await render_template(
-                self.form_template,
-                view=self,
-                admin=getattr(self, "admin", None),
-                form=form,
-                item=item,
-                item_id=id,
-                fields=self.get_model_fields(),
-            )
+        return await render_template(
+            self.form_template,
+            view=self,
+            admin=getattr(self, "admin", None),
+            form=form,
+            item=item,
+            item_id=id,
+            fields=self.get_model_fields(),
+        )
 
     async def details_view(self, id: int):
         """Enhanced details view with database integration."""

@@ -120,7 +120,6 @@ class SQLAlchemyProvider(DatabaseProvider):
                 setattr(instance, key, value)
 
         await session.flush()
-        # Refresh the instance to load all attributes before converting to dict
         await session.refresh(instance)
         result_dict = self._model_to_dict(instance)
         await session.commit()

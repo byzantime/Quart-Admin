@@ -12,3 +12,4 @@ __pycache__
 
 # Ignore LLM tools
 .claude
+CLAUDE.md
