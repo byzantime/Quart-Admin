@@ -26,7 +26,6 @@ class QuartAdminConfig:
 
     # Features
     enable_search: bool = True
-    enable_export: bool = True
     enable_batch_actions: bool = True
 
     # UI settings
@@ -62,7 +61,6 @@ class QuartAdminConfig:
             "default_page_size": self.default_page_size,
             "max_page_size": self.max_page_size,
             "enable_search": self.enable_search,
-            "enable_export": self.enable_export,
             "enable_batch_actions": self.enable_batch_actions,
             "site_name": self.site_name,
             "site_logo": self.site_logo,

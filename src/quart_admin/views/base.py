@@ -51,7 +51,6 @@ class AdminView:
         self.can_edit = True
         self.can_delete = True
         self.can_view_details = True
-        self.can_export = True
 
         # Pagination
         self.page_size = 20
@@ -109,15 +108,6 @@ class AdminView:
                 endpoint=f"{self.endpoint}_delete",
                 view_func=self._wrap_with_auth(self.delete_view),
                 methods=["POST"],
-            )
-
-        # Export view
-        if self.can_export:
-            parent_blueprint.add_url_rule(
-                f"{self.url}/export",
-                endpoint=f"{self.endpoint}_export",
-                view_func=self._wrap_with_auth(self.export_view),
-                methods=["GET"],
             )
 
     def _wrap_with_auth(self, view_func: Callable) -> Callable:
@@ -200,11 +190,6 @@ class AdminView:
         await flash(f"{self.name} deletion not implemented", "error")
         return redirect(self.get_list_url())
 
-    async def export_view(self):
-        """Export view - override in subclasses."""
-        await flash(f"{self.name} export not implemented", "error")
-        return redirect(self.get_list_url())
-
     def get_list_url(self):
         """Get URL for list view."""
         return url_for(f"admin.{self.endpoint}_list")
@@ -231,12 +216,6 @@ class AdminView:
         """Get URL for delete view."""
         if self.can_delete:
             return url_for(f"admin.{self.endpoint}_delete", id=id)
-        return None
-
-    def get_export_url(self):
-        """Get URL for export view."""
-        if self.can_export:
-            return url_for(f"admin.{self.endpoint}_export")
         return None
 
     def format_column_value(self, item: Dict[str, Any], column: str) -> str:
