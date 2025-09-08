@@ -115,7 +115,12 @@ class WTFormsGenerator(FormGenerator):
         nullable = column_info.get("nullable", True)
 
         validators = []
-        if not nullable and not column_info.get("primary_key", False):
+        has_default = column_info.get("default") is not None
+        if (
+            not nullable
+            and not column_info.get("primary_key", False)
+            and not has_default
+        ):
             validators.append(DataRequired())
         else:
             validators.append(OptionalValidator())
