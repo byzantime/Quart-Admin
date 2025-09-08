@@ -90,7 +90,9 @@ class SQLAlchemyProvider(DatabaseProvider):
         instance = model(**data)
         session.add(instance)
         await session.flush()  # Get the ID
-        return self._model_to_dict(instance)
+        result_dict = self._model_to_dict(instance)
+        await session.commit()
+        return result_dict
 
     async def update(
         self, model: Type, session: Any, pk_values: Dict[str, Any], **data
