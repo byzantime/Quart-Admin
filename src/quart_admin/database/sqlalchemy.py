@@ -8,6 +8,10 @@ from typing import List
 from typing import Optional
 from typing import Type
 
+from sqlalchemy import func
+from sqlalchemy import select
+from sqlalchemy.inspection import inspect
+
 from .base import DatabaseProvider
 
 
@@ -41,13 +45,6 @@ class SQLAlchemyProvider(DatabaseProvider):
         self, model: Type, session: Any, **filters
     ) -> List[Dict[str, Any]]:
         """Get all records for a SQLAlchemy model."""
-        try:
-            from sqlalchemy import select
-        except ImportError as err:
-            raise ImportError(
-                "SQLAlchemy is not installed. Install with: pip install quart-admin[sqlalchemy]"
-            ) from err
-
         query = select(model)
 
         # Handle special filters
@@ -70,13 +67,6 @@ class SQLAlchemyProvider(DatabaseProvider):
         self, model: Type, session: Any, pk_values: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
         """Get single SQLAlchemy record by primary key values."""
-        try:
-            from sqlalchemy import select
-        except ImportError as err:
-            raise ImportError(
-                "SQLAlchemy is not installed. Install with: pip install quart-admin[sqlalchemy]"
-            ) from err
-
         query = select(model)
         for key, value in pk_values.items():
             query = query.where(getattr(model, key) == value)
@@ -98,13 +88,6 @@ class SQLAlchemyProvider(DatabaseProvider):
         self, model: Type, session: Any, pk_values: Dict[str, Any], **data
     ) -> Dict[str, Any]:
         """Update existing SQLAlchemy record."""
-        try:
-            from sqlalchemy import select
-        except ImportError as err:
-            raise ImportError(
-                "SQLAlchemy is not installed. Install with: pip install quart-admin[sqlalchemy]"
-            ) from err
-
         query = select(model)
         for key, value in pk_values.items():
             query = query.where(getattr(model, key) == value)
@@ -129,13 +112,6 @@ class SQLAlchemyProvider(DatabaseProvider):
         self, model: Type, session: Any, pk_values: Dict[str, Any]
     ) -> bool:
         """Delete SQLAlchemy record by primary key values."""
-        try:
-            from sqlalchemy import select
-        except ImportError as err:
-            raise ImportError(
-                "SQLAlchemy is not installed. Install with: pip install quart-admin[sqlalchemy]"
-            ) from err
-
         query = select(model)
         for key, value in pk_values.items():
             query = query.where(getattr(model, key) == value)
@@ -152,14 +128,6 @@ class SQLAlchemyProvider(DatabaseProvider):
 
     async def count(self, model: Type, session: Any, **filters) -> int:
         """Count SQLAlchemy records."""
-        try:
-            from sqlalchemy import func
-            from sqlalchemy import select
-        except ImportError as err:
-            raise ImportError(
-                "SQLAlchemy is not installed. Install with: pip install quart-admin[sqlalchemy]"
-            ) from err
-
         query = select(func.count()).select_from(model)
 
         # Handle special filters
@@ -178,11 +146,6 @@ class SQLAlchemyProvider(DatabaseProvider):
 
     def get_model_fields(self, model: Type) -> List[Dict[str, Any]]:
         """Get field information for SQLAlchemy model."""
-        try:
-            from sqlalchemy.inspection import inspect
-        except ImportError as err:
-            raise ImportError("SQLAlchemy is not installed") from err
-
         inspector = inspect(model)
         fields = []
 
@@ -202,21 +165,11 @@ class SQLAlchemyProvider(DatabaseProvider):
 
     def get_primary_key_fields(self, model: Type) -> List[str]:
         """Get primary key field names for SQLAlchemy model."""
-        try:
-            from sqlalchemy.inspection import inspect
-        except ImportError as err:
-            raise ImportError("SQLAlchemy is not installed") from err
-
         inspector = inspect(model)
         return [column.name for column in inspector.columns if column.primary_key]
 
     def get_model_relationships(self, model: Type) -> Dict[str, Dict[str, Any]]:
         """Get relationship information for SQLAlchemy model."""
-        try:
-            from sqlalchemy.inspection import inspect
-        except ImportError as err:
-            raise ImportError("SQLAlchemy is not installed") from err
-
         inspector = inspect(model)
         relationships = {}
 
@@ -236,11 +189,6 @@ class SQLAlchemyProvider(DatabaseProvider):
         """Convert SQLAlchemy model instance to dictionary."""
         if instance is None:
             return {}
-
-        try:
-            from sqlalchemy.inspection import inspect
-        except ImportError as err:
-            raise ImportError("SQLAlchemy is not installed") from err
 
         inspector = inspect(instance.__class__)
         result = {}
