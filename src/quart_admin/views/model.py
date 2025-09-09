@@ -102,6 +102,38 @@ class ModelView(AdminView):
         """Get list of searchable columns."""
         return self.column_searchable_list or []
 
+    def process_form_data(self, form) -> Dict[str, Any]:
+        """Process form data and convert appropriate fields back to Python objects."""
+        import json
+
+        form_data = {}
+        model_fields = self.get_model_fields()
+        json_fields = {
+            field["name"]: field["type"]
+            for field in model_fields
+            if "json" in field.get("type", "").lower()
+        }
+
+        for field in form:
+            if field.name != "csrf_token" and field.data is not None:
+                value = field.data
+
+                # Convert JSON string fields back to Python objects
+                if (
+                    field.name in json_fields
+                    and isinstance(value, str)
+                    and value.strip()
+                ):
+                    try:
+                        value = json.loads(value)
+                    except (json.JSONDecodeError, ValueError):
+                        # If JSON parsing fails, keep as string (will likely cause validation error)
+                        pass
+
+                form_data[field.name] = value
+
+        return form_data
+
     async def list_view(self):
         """Enhanced list view with database integration."""
         if not self.database_provider:
@@ -163,10 +195,7 @@ class ModelView(AdminView):
 
         if form.validate_on_submit():
             async with self.get_database_session() as session:
-                form_data = {}
-                for field in form:
-                    if field.name != "csrf_token" and field.data is not None:
-                        form_data[field.name] = field.data
+                form_data = self.process_form_data(form)
 
                 # Create record
                 await self.database_provider.create(self.model, session, **form_data)
@@ -224,10 +253,13 @@ class ModelView(AdminView):
             async with self.get_database_session() as session:
                 excluded_fields = {"csrf_token"} | set(pk_fields)
 
-                form_data = {}
-                for field in form:
-                    if field.name not in excluded_fields:
-                        form_data[field.name] = field.data
+                # Process form data with proper object conversion
+                all_form_data = self.process_form_data(form)
+                form_data = {
+                    key: value
+                    for key, value in all_form_data.items()
+                    if key not in excluded_fields
+                }
 
                 await self.database_provider.update(
                     self.model, session, pk_values, **form_data
@@ -326,5 +358,21 @@ class ModelView(AdminView):
             return "✓" if value else "✗"
         elif hasattr(value, "strftime"):  # datetime
             return value.strftime("%Y-%m-%d %H:%M")
+        elif isinstance(value, (dict, list)):
+            import json
+
+            try:
+                # Pretty format JSON objects for better readability
+                json_str = json.dumps(
+                    value, indent=None, separators=(",", ":"), default=str
+                )
+                # Truncate very long JSON for list view
+                if len(json_str) > 100:
+                    return json_str[:97] + "..."
+                return json_str
+            except (TypeError, ValueError):
+                # Fallback to string representation if JSON serialization fails
+                str_repr = str(value)
+                return str_repr[:100] + "..." if len(str_repr) > 100 else str_repr
 
         return str(value)

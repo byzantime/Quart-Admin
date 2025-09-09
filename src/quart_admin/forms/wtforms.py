@@ -1,6 +1,6 @@
 """WTForms integration for form generation."""
 
-from datetime import datetime
+import json
 from types import SimpleNamespace
 from typing import Any
 from typing import Dict
@@ -63,26 +63,26 @@ class WTFormsGenerator(FormGenerator):
 
         # Convert dictionary obj to SimpleNamespace for WTForms compatibility
         if obj and isinstance(obj, dict):
-            # Parse datetime strings for datetime columns only
+            # Convert Python objects to appropriate form field values
             converted_obj = {}
-            datetime_fields = {
+            json_fields = {
                 field_info["name"]: field_info["type"]
                 for field_info in model_fields
-                if "datetime" in field_info.get("type", "").lower()
+                if "json" in field_info.get("type", "").lower()
             }
 
             for column_name, value in obj.items():
-                if column_name in datetime_fields and isinstance(value, str) and value:
+                # Convert JSON/dict/list objects to strings for TextAreaField
+                if (
+                    column_name in json_fields
+                    and value is not None
+                    and not isinstance(value, str)
+                ):
                     try:
-                        if value.endswith("Z"):
-                            value = datetime.fromisoformat(value.replace("Z", "+00:00"))
-                        elif "." in value and "T" in value:
-                            value = datetime.fromisoformat(value)
-                        else:
-                            value = datetime.fromisoformat(value)
-                    except ValueError:
-                        pass
-
+                        value = json.dumps(value, indent=2, default=str)
+                    except (TypeError, ValueError):
+                        value = str(value)
+                # For all other types, let WTForms handle them natively
                 converted_obj[column_name] = value
 
             obj = SimpleNamespace(**converted_obj)
@@ -132,7 +132,12 @@ class WTFormsGenerator(FormGenerator):
             )
         elif "bool" in column_type:
             return BooleanField(column_name.replace("_", " ").title(), **kwargs)
-        elif "text" in column_type or "clob" in column_type or "json" in column_type:
+        elif "text" in column_type or "clob" in column_type:
+            return TextAreaField(
+                column_name.replace("_", " ").title(), validators=validators, **kwargs
+            )
+        elif "json" in column_type:
+            # JSON fields use TextAreaField but with custom processing
             return TextAreaField(
                 column_name.replace("_", " ").title(), validators=validators, **kwargs
             )
