@@ -247,11 +247,6 @@ class SQLAlchemyProvider(DatabaseProvider):
 
         for column in inspector.columns:
             value = getattr(instance, column.name)
-            # Convert datetime and other complex types to string
-            if hasattr(value, "isoformat"):
-                value = value.isoformat()
-            elif not isinstance(value, (str, int, float, bool, type(None))):
-                value = str(value)
             result[column.name] = value
 
         return result
