@@ -105,6 +105,11 @@
         <div class="max-w-full px-6 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
+                    <!-- Mobile menu button -->
+                    <button id="mobile-menu-button" class="md:hidden mr-4 p-2 text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+
                     <a href="{{ url_for('admin.index') }}" class="text-2xl font-bold tracking-wide text-gray-900 hover:text-gray-700">
                         {% if config.site_logo %}
                         <img src="{{ config.site_logo }}" alt="Logo" class="h-8 w-8 mr-3 inline">
@@ -127,8 +132,8 @@
     </header>
 
     <div class="flex min-h-screen">
-        <!-- Sidebar -->
-        <nav class="print-sidebar w-64 flex-shrink-0">
+        <!-- Desktop Sidebar -->
+        <nav class="print-sidebar w-64 flex-shrink-0 hidden md:block">
             <div class="p-4">
                 <!-- Dashboard Link -->
                 <div class="mb-4">
@@ -158,6 +163,53 @@
                 {% endfor %}
             </div>
         </nav>
+
+        <!-- Mobile Sidebar Overlay -->
+        <div id="mobile-sidebar-overlay" class="fixed inset-0 z-50 hidden md:hidden">
+            <!-- Backdrop -->
+            <div class="fixed inset-0 bg-black bg-opacity-50" onclick="closeMobileSidebar()"></div>
+
+            <!-- Sidebar -->
+            <nav class="fixed left-0 top-0 h-full print-sidebar w-64 transform transition-transform">
+                <div class="flex items-center justify-between p-4 border-b border-gray-300">
+                    <h2 class="font-bold text-gray-900">Menu</h2>
+                    <button onclick="closeMobileSidebar()" class="p-2 text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="p-4 overflow-y-auto">
+                    <!-- Dashboard Link -->
+                    <div class="mb-4">
+                        <a href="{{ url_for('admin.index') }}"
+                           class="block px-3 py-2 text-gray-900 font-semibold hover:bg-white hover:shadow-sm transition-all {% if request.endpoint == 'admin.index' %}bg-white shadow-sm border-l-4 border-orange-500 text-gray-900{% endif %}"
+                           onclick="closeMobileSidebar()">
+                            <i class="fas fa-tachometer-alt mr-3"></i>
+                            Dashboard
+                        </a>
+                    </div>
+
+                    <!-- Tables and Views -->
+                    {% for category, views in admin.get_categories().items() %}
+                    <div class="mb-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-600 px-3 pb-2 border-b border-gray-300">
+                            {% if category.lower() == 'default' or category == 'Models' %}Tables{% else %}{{ category }}{% endif %}
+                        </h3>
+                        <div class="mt-2 space-y-1">
+                            {% for view in views %}
+                            <a href="{{ view.get_list_url() }}"
+                               class="block px-3 py-2 text-gray-700 hover:bg-white hover:shadow-sm hover:text-gray-900 transition-all {% if view.endpoint in request.endpoint %}bg-white shadow-sm border-l-4 border-blue-500 text-gray-900 font-medium{% endif %}"
+                               onclick="closeMobileSidebar()">
+                                <i class="fas fa-table mr-3 text-sm"></i>
+                                {{ view.name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </nav>
+        </div>
 
         <!-- Main Content -->
         <main class="flex-1 p-6 min-w-0 overflow-hidden">
@@ -209,6 +261,26 @@
             if (e.key === 'Escape') {
                 const modals = document.querySelectorAll('.modal-backdrop:not(.hidden)');
                 modals.forEach(modal => modal.classList.add('hidden'));
+                closeMobileSidebar();
+            }
+        });
+
+        // Mobile sidebar functionality
+        function openMobileSidebar() {
+            document.getElementById('mobile-sidebar-overlay').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMobileSidebar() {
+            document.getElementById('mobile-sidebar-overlay').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // Mobile menu button click handler
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            if (mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', openMobileSidebar);
             }
         });
     </script>
