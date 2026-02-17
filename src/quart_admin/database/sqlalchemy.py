@@ -75,19 +75,47 @@ class SQLAlchemyProvider(DatabaseProvider):
         record = result.scalar_one_or_none()
         return self._model_to_dict(record) if record else None
 
-    async def create(self, model: Type, session: Any, **data) -> Dict[str, Any]:
-        """Create new SQLAlchemy record."""
+    async def create(
+        self, model: Type, session: Any, commit: bool = True, **data
+    ) -> Any:
+        """Create new SQLAlchemy record.
+
+        Args:
+            model: The SQLAlchemy model class
+            session: The async session
+            commit: Whether to commit the transaction (default True)
+            **data: Field values for the new record
+
+        Returns:
+            The created model instance
+        """
         instance = model(**data)
         session.add(instance)
         await session.flush()  # Get the ID
-        result_dict = self._model_to_dict(instance)
-        await session.commit()
-        return result_dict
+        if commit:
+            await session.commit()
+        return instance
 
     async def update(
-        self, model: Type, session: Any, pk_values: Dict[str, Any], **data
-    ) -> Dict[str, Any]:
-        """Update existing SQLAlchemy record."""
+        self,
+        model: Type,
+        session: Any,
+        pk_values: Dict[str, Any],
+        commit: bool = True,
+        **data,
+    ) -> Any:
+        """Update existing SQLAlchemy record.
+
+        Args:
+            model: The SQLAlchemy model class
+            session: The async session
+            pk_values: Primary key field name to value mapping
+            commit: Whether to commit the transaction (default True)
+            **data: Field values to update
+
+        Returns:
+            The updated model instance
+        """
         query = select(model)
         for key, value in pk_values.items():
             query = query.where(getattr(model, key) == value)
@@ -104,27 +132,53 @@ class SQLAlchemyProvider(DatabaseProvider):
 
         await session.flush()
         await session.refresh(instance)
-        result_dict = self._model_to_dict(instance)
-        await session.commit()
-        return result_dict
+        if commit:
+            await session.commit()
+        return instance
 
-    async def delete(
+    async def get_model_by_pk(
         self, model: Type, session: Any, pk_values: Dict[str, Any]
-    ) -> bool:
-        """Delete SQLAlchemy record by primary key values."""
+    ) -> Optional[Any]:
+        """Get model instance by primary key values.
+
+        Args:
+            model: The SQLAlchemy model class
+            session: The async session
+            pk_values: Primary key field name to value mapping
+
+        Returns:
+            The model instance or None if not found
+        """
         query = select(model)
         for key, value in pk_values.items():
             query = query.where(getattr(model, key) == value)
 
         result = await session.execute(query)
-        instance = result.scalar_one_or_none()
+        return result.scalar_one_or_none()
+
+    async def delete(
+        self, model: Type, session: Any, pk_values: Dict[str, Any], commit: bool = True
+    ) -> Optional[Any]:
+        """Delete SQLAlchemy record by primary key values.
+
+        Args:
+            model: The SQLAlchemy model class
+            session: The async session
+            pk_values: Primary key field name to value mapping
+            commit: Whether to commit the transaction (default True)
+
+        Returns:
+            The deleted model instance or None if not found
+        """
+        instance = await self.get_model_by_pk(model, session, pk_values)
 
         if not instance:
-            return False
+            return None
 
         await session.delete(instance)
-        await session.commit()
-        return True
+        if commit:
+            await session.commit()
+        return instance
 
     async def count(self, model: Type, session: Any, **filters) -> int:
         """Count SQLAlchemy records."""

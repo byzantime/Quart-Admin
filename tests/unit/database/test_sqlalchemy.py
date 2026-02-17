@@ -243,21 +243,14 @@ class TestSQLAlchemyProviderWithMocks:
         mock_instance = MagicMock()
         mock_model.return_value = mock_instance
 
-        with patch.object(
-            sqlalchemy_provider,
-            "_model_to_dict",
-            return_value={"id": 1, "name": "test"},
-        ) as mock_to_dict:
-            result = await sqlalchemy_provider.create(
-                mock_model, mock_session, name="test"
-            )
+        result = await sqlalchemy_provider.create(mock_model, mock_session, name="test")
 
-            assert result == {"id": 1, "name": "test"}
-            mock_model.assert_called_once_with(name="test")
-            mock_session.add.assert_called_once_with(mock_instance)
-            mock_session.flush.assert_called_once()
-            mock_session.commit.assert_called_once()
-            mock_to_dict.assert_called_once_with(mock_instance)
+        # Now returns the model instance, not a dict
+        assert result is mock_instance
+        mock_model.assert_called_once_with(name="test")
+        mock_session.add.assert_called_once_with(mock_instance)
+        mock_session.flush.assert_called_once()
+        mock_session.commit.assert_called_once()
 
     async def test_update(self, sqlalchemy_provider, mock_model, mock_session_factory):
         """Test update method."""
@@ -271,22 +264,17 @@ class TestSQLAlchemyProviderWithMocks:
         # Mock the instance to have a name attribute
         mock_instance.name = None  # Initial value
 
-        with patch.object(
-            sqlalchemy_provider,
-            "_model_to_dict",
-            return_value={"id": 1, "name": "updated"},
-        ) as mock_to_dict:
-            result = await sqlalchemy_provider.update(
-                mock_model, mock_session, {"id": 1}, name="updated"
-            )
+        result = await sqlalchemy_provider.update(
+            mock_model, mock_session, {"id": 1}, name="updated"
+        )
 
-            assert result == {"id": 1, "name": "updated"}
-            # Verify the attribute was set
-            assert mock_instance.name == "updated"
-            mock_session.flush.assert_called_once()
-            mock_session.refresh.assert_called_once_with(mock_instance)
-            mock_session.commit.assert_called_once()
-            mock_to_dict.assert_called_once_with(mock_instance)
+        # Now returns the model instance, not a dict
+        assert result is mock_instance
+        # Verify the attribute was set
+        assert mock_instance.name == "updated"
+        mock_session.flush.assert_called_once()
+        mock_session.refresh.assert_called_once_with(mock_instance)
+        mock_session.commit.assert_called_once()
 
     async def test_update_not_found(
         self, sqlalchemy_provider, mock_model, mock_session_factory
@@ -314,7 +302,8 @@ class TestSQLAlchemyProviderWithMocks:
 
         result = await sqlalchemy_provider.delete(mock_model, mock_session, {"id": 1})
 
-        assert result is True
+        # Now returns the deleted model instance, not True
+        assert result is mock_instance
         mock_session.delete.assert_called_once_with(mock_instance)
         mock_session.commit.assert_called_once()
 
@@ -329,7 +318,8 @@ class TestSQLAlchemyProviderWithMocks:
         mock_session.execute.return_value = mock_result
 
         result = await sqlalchemy_provider.delete(mock_model, mock_session, {"id": 999})
-        assert result is False
+        # Now returns None instead of False
+        assert result is None
 
     async def test_count(
         self,

@@ -77,6 +77,43 @@ class ModelView(AdminView):
         # Validation
         self.form_validators: Dict[str, List[Callable]] = {}
 
+    # Lifecycle hooks - override in subclass to add custom logic
+    async def on_model_change(self, form, model, is_created: bool) -> None:
+        """Called before model is created/updated. Override to add custom logic.
+
+        Args:
+            form: The form with validated data
+            model: The model instance being created or updated
+            is_created: True if creating new record, False if updating
+        """
+        pass
+
+    async def on_model_delete(self, model) -> None:
+        """Called before model is deleted. Override to add custom logic.
+
+        Args:
+            model: The model instance being deleted
+        """
+        pass
+
+    async def after_model_change(self, form, model, is_created: bool) -> None:
+        """Called after model is created/updated and committed.
+
+        Args:
+            form: The form with validated data
+            model: The model instance that was created or updated
+            is_created: True if created new record, False if updated
+        """
+        pass
+
+    async def after_model_delete(self, model) -> None:
+        """Called after model is deleted and committed.
+
+        Args:
+            model: The model instance that was deleted
+        """
+        pass
+
     def get_database_session(self):
         """Get database session from provider."""
         if not self.database_provider:
@@ -197,8 +234,19 @@ class ModelView(AdminView):
             async with self.get_database_session() as session:
                 form_data = self.process_form_data(form)
 
-                # Create record
-                await self.database_provider.create(self.model, session, **form_data)
+                # Create record (don't commit yet so hook can modify)
+                model = await self.database_provider.create(
+                    self.model, session, commit=False, **form_data
+                )
+
+                # Call pre-commit hook
+                await self.on_model_change(form, model, is_created=True)
+
+                # Commit the transaction
+                await session.commit()
+
+                # Call post-commit hook
+                await self.after_model_change(form, model, is_created=True)
 
                 await flash(f"{self.name} created successfully!", "success")
                 return redirect(self.get_list_url())
@@ -261,9 +309,19 @@ class ModelView(AdminView):
                     if key not in excluded_fields
                 }
 
-                await self.database_provider.update(
-                    self.model, session, pk_values, **form_data
+                # Update record (don't commit yet so hook can modify)
+                model = await self.database_provider.update(
+                    self.model, session, pk_values, commit=False, **form_data
                 )
+
+                # Call pre-commit hook
+                await self.on_model_change(form, model, is_created=False)
+
+                # Commit the transaction
+                await session.commit()
+
+                # Call post-commit hook
+                await self.after_model_change(form, model, is_created=False)
 
                 await flash(f"{self.name} updated successfully!", "success")
                 return redirect(self.get_list_url())
@@ -333,14 +391,30 @@ class ModelView(AdminView):
                     "Composite primary keys not yet supported in delete_view"
                 )
 
-            success = await self.database_provider.delete(
+            # Get model instance before delete for hooks
+            model = await self.database_provider.get_model_by_pk(
                 self.model, session, pk_values
             )
 
-            if success:
-                await flash(f"{self.name} deleted successfully!", "success")
-            else:
+            if not model:
                 await flash(f"{self.name} not found", "error")
+                return redirect(self.get_list_url())
+
+            # Call pre-delete hook
+            await self.on_model_delete(model)
+
+            # Delete (without commit)
+            await self.database_provider.delete(
+                self.model, session, pk_values, commit=False
+            )
+
+            # Commit the transaction
+            await session.commit()
+
+            # Call post-delete hook
+            await self.after_model_delete(model)
+
+            await flash(f"{self.name} deleted successfully!", "success")
 
         return redirect(self.get_list_url())
 
