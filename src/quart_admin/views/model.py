@@ -21,6 +21,17 @@ from .base import AdminView
 class ModelView(AdminView):
     """Database model admin view with CRUD operations."""
 
+    # Model-/form settings — override as class attributes (Flask-Admin style)
+    column_list: Optional[List[str]] = None
+    column_searchable_list: Optional[List[str]] = None
+    column_filters: Optional[List[str]] = None
+    column_sortable_list: Optional[List[str]] = None
+    column_labels: Dict[str, str] = {}
+    column_formatters: Dict[str, Callable] = {}
+    form_columns: Optional[List[str]] = []
+    form_excluded_columns: Optional[List[str]] = []
+    form_validators: Dict[str, List[Callable]] = {}
+
     def __init__(
         self,
         model: Type,
@@ -61,21 +72,6 @@ class ModelView(AdminView):
 
         self.model = model
         self.form_generator = form_generator
-
-        # Model-specific settings
-        self.column_list: Optional[List[str]] = None
-        self.column_searchable_list: Optional[List[str]] = None
-        self.column_filters: Optional[List[str]] = None
-        self.column_sortable_list: Optional[List[str]] = None
-        self.column_labels: Dict[str, str] = {}
-        self.column_formatters: Dict[str, Callable] = {}
-
-        # Form settings
-        self.form_columns: Optional[List[str]] = []
-        self.form_excluded_columns: Optional[List[str]] = []
-
-        # Validation
-        self.form_validators: Dict[str, List[Callable]] = {}
 
     # Lifecycle hooks - override in subclass to add custom logic
     async def on_model_change(self, form, model, is_created: bool) -> None:
