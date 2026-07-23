@@ -412,32 +412,26 @@ class TestSQLAlchemyProviderImportFailure:
 
     def test_import_fails_without_sqlalchemy_available(self):
         """Test that importing SQLAlchemy provider fails when modules are not available."""
-        # Simulate missing SQLAlchemy by removing it from sys.modules
-        original_modules = {}
-        sqlalchemy_modules = ["sqlalchemy", "sqlalchemy.inspection"]
-
-        # Save and remove SQLAlchemy modules
         import sys
 
-        for module in sqlalchemy_modules:
-            if module in sys.modules:
-                original_modules[module] = sys.modules[module]
-                del sys.modules[module]
+        # Setting a module to None in sys.modules makes Python treat it as
+        # unimportable, even when the package is installed on disk.
+        with patch.dict(
+            "sys.modules",
+            {"sqlalchemy": None, "sqlalchemy.inspection": None},
+        ):
+            # Clear any cached quart_admin import so Python re-evaluates it
+            # under the patched sys.modules.
+            mods_to_clear = [
+                k for k in sys.modules if k.startswith("quart_admin.database")
+            ]
+            for mod in mods_to_clear:
+                del sys.modules[mod]
 
-        try:
-            # Clear any cached imports
-            if "quart_admin.database.sqlalchemy" in sys.modules:
-                del sys.modules["quart_admin.database.sqlalchemy"]
-
-            # Try to import - should fail due to missing SQLAlchemy
             with pytest.raises(ImportError):
                 from quart_admin.database.sqlalchemy import (
                     SQLAlchemyProvider,  # noqa: F401
                 )
-        finally:
-            # Restore modules
-            for module, mod_obj in original_modules.items():
-                sys.modules[module] = mod_obj
 
     def test_import_succeeds_with_mock_sqlalchemy(self):
         """Test that import succeeds when SQLAlchemy modules are mocked."""

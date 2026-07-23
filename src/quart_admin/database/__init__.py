@@ -5,8 +5,8 @@ from .base import DatabaseProvider
 __all__ = ["DatabaseProvider"]
 
 try:
-    from .sqlalchemy import SQLAlchemyProvider
+    from .sqlalchemy import SQLAlchemyProvider as SQLAlchemyProvider
 
-    __all__.append(SQLAlchemyProvider)
+    __all__.append("SQLAlchemyProvider")
 except ImportError:
     pass
