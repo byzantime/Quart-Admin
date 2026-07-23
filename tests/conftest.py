@@ -19,6 +19,21 @@ def test_app():
 
 
 @pytest.fixture
+def flask_app():
+    """Create a minimal Flask app for instantiating FlaskForm subclasses in unit tests."""
+    try:
+        from flask import Flask
+
+        app = Flask(__name__)
+        app.config["SECRET_KEY"] = "test-secret-key"
+        app.config["TESTING"] = True
+        app.config["WTF_CSRF_ENABLED"] = False
+        return app
+    except ImportError:
+        pytest.skip("Flask not available")
+
+
+@pytest.fixture
 def admin_config():
     """Create a test admin configuration."""
     return QuartAdminConfig(

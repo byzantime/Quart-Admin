@@ -24,6 +24,7 @@ class WTFormsGenerator(FormGenerator):
         database_provider: Any,
         obj: Optional[Dict[str, Any]] = None,
         excluded_columns: Optional[List[str]] = None,
+        extra_fields: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> Any:
         """Create WTForms form for model using intelligent field generation."""
@@ -60,6 +61,10 @@ class WTFormsGenerator(FormGenerator):
 
             field = self.get_field_for_column(field_info)
             setattr(DynamicForm, column_name, field)
+
+        if extra_fields:
+            for field_name, field in extra_fields.items():
+                setattr(DynamicForm, field_name, field)
 
         # Convert dictionary obj to SimpleNamespace for WTForms compatibility
         if obj and isinstance(obj, dict):

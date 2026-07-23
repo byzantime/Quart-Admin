@@ -19,6 +19,7 @@ class FormGenerator(ABC):
         database_provider,
         obj: Optional[Dict[str, Any]] = None,
         excluded_columns: Optional[List[str]] = None,
+        extra_fields: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> Any:
         """Create form for model.

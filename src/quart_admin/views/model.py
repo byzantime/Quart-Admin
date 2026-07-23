@@ -28,9 +28,14 @@ class ModelView(AdminView):
     column_sortable_list: Optional[List[str]] = None
     column_labels: Dict[str, str] = {}
     column_formatters: Dict[str, Callable] = {}
-    form_columns: Optional[List[str]] = []
-    form_excluded_columns: Optional[List[str]] = []
+    form_columns: Optional[List[str]] = None
+    form_excluded_columns: Optional[List[str]] = None
     form_validators: Dict[str, List[Callable]] = {}
+    # Extra fields injected into the generated form (e.g. a plaintext password field).
+    # These are excluded from the create()/update() kwargs automatically since they
+    # rarely map to a model column directly; read raw submitted values off `form` in
+    # on_model_change to hash/transform them onto the model before it is committed.
+    form_extra_fields: Optional[Dict[str, Any]] = None
 
     def __init__(
         self,
@@ -224,11 +229,18 @@ class ModelView(AdminView):
             self.model,
             self.database_provider,
             excluded_columns=self.form_excluded_columns,
+            extra_fields=self.form_extra_fields,
         )
 
         if form.validate_on_submit():
             async with self.get_database_session() as session:
                 form_data = self.process_form_data(form)
+                if self.form_extra_fields:
+                    form_data = {
+                        key: value
+                        for key, value in form_data.items()
+                        if key not in self.form_extra_fields
+                    }
 
                 # Create record (don't commit yet so hook can modify)
                 model = await self.database_provider.create(
@@ -291,11 +303,14 @@ class ModelView(AdminView):
             self.database_provider,
             obj=item,
             excluded_columns=self.form_excluded_columns,
+            extra_fields=self.form_extra_fields,
         )
 
         if form.validate_on_submit():
             async with self.get_database_session() as session:
-                excluded_fields = {"csrf_token"} | set(pk_fields)
+                excluded_fields = (
+                    {"csrf_token"} | set(pk_fields) | set(self.form_extra_fields or {})
+                )
 
                 # Process form data with proper object conversion
                 all_form_data = self.process_form_data(form)
