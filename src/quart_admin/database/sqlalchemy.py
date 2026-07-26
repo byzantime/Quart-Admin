@@ -8,11 +8,25 @@ from typing import List
 from typing import Optional
 from typing import Type
 
+from sqlalchemy import Unicode
+from sqlalchemy import cast as sql_cast
+from sqlalchemy import desc
 from sqlalchemy import func
+from sqlalchemy import or_
 from sqlalchemy import select
 from sqlalchemy.inspection import inspect
 
 from .base import DatabaseProvider
+
+
+def _parse_like_term(term: str) -> str:
+    """Convert a search term to a LIKE pattern (mirrors Flask-Admin _apply_search)."""
+    if term.startswith("^"):
+        return f"{term[1:]}%"
+    elif term.startswith("="):
+        return term[1:]
+    else:
+        return f"%{term}%"
 
 
 class SQLAlchemyProvider(DatabaseProvider):
@@ -47,17 +61,41 @@ class SQLAlchemyProvider(DatabaseProvider):
         """Get all records for a SQLAlchemy model."""
         query = select(model)
 
-        # Handle special filters
-        filters.pop("search", None)
+        limit = filters.pop("limit", None)
+        offset = filters.pop("offset", None)
+        search = filters.pop("search", None)
+        searchable_columns = filters.pop("searchable_columns", [])
+        sort_by = filters.pop("sort_by", None)
+        sort_desc_flag = filters.pop("sort_desc", False)
 
         # Apply regular column filters
         for key, value in filters.items():
             if hasattr(model, key):
                 query = query.where(getattr(model, key) == value)
 
-        # TODO: Implement proper search functionality
-        # For now, ignore search to get basic listing working
-        # In a full implementation, this would search across searchable columns
+        # Apply search: one .where() per term (AND logic across terms, OR across columns)
+        if search and searchable_columns:
+            valid_columns = [c for c in searchable_columns if hasattr(model, c)]
+            for term in search.split():
+                if not term or not valid_columns:
+                    continue
+                stmt = _parse_like_term(term)
+                clause = or_(
+                    *[
+                        sql_cast(getattr(model, c), Unicode).ilike(stmt)
+                        for c in valid_columns
+                    ]
+                )
+                query = query.where(clause)
+
+        if sort_by and hasattr(model, sort_by):
+            col = getattr(model, sort_by)
+            query = query.order_by(desc(col) if sort_desc_flag else col)
+
+        if limit is not None:
+            query = query.limit(limit)
+        if offset is not None:
+            query = query.offset(offset)
 
         result = await session.execute(query)
         records = result.scalars().all()
@@ -184,16 +222,31 @@ class SQLAlchemyProvider(DatabaseProvider):
         """Count SQLAlchemy records."""
         query = select(func.count()).select_from(model)
 
-        # Handle special filters
-        filters.pop("search", None)
+        filters.pop("limit", None)
+        filters.pop("offset", None)
+        search = filters.pop("search", None)
+        searchable_columns = filters.pop("searchable_columns", [])
+        filters.pop("sort_by", None)
+        filters.pop("sort_desc", None)
 
         # Apply regular column filters
         for key, value in filters.items():
             if hasattr(model, key):
                 query = query.where(getattr(model, key) == value)
 
-        # TODO: Implement proper search functionality
-        # For now, ignore search to get basic listing working
+        if search and searchable_columns:
+            valid_columns = [c for c in searchable_columns if hasattr(model, c)]
+            for term in search.split():
+                if not term or not valid_columns:
+                    continue
+                stmt = _parse_like_term(term)
+                clause = or_(
+                    *[
+                        sql_cast(getattr(model, c), Unicode).ilike(stmt)
+                        for c in valid_columns
+                    ]
+                )
+                query = query.where(clause)
 
         result = await session.execute(query)
         return result.scalar()

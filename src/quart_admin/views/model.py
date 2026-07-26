@@ -140,6 +140,10 @@ class ModelView(AdminView):
         """Get list of searchable columns."""
         return self.column_searchable_list or []
 
+    def get_sortable_columns(self) -> List[str]:
+        """Get list of sortable columns."""
+        return self.column_sortable_list or []
+
     def process_form_data(self, form) -> Dict[str, Any]:
         """Process form data and convert appropriate fields back to Python objects."""
         import json
@@ -177,32 +181,32 @@ class ModelView(AdminView):
         if not self.database_provider:
             return await super().list_view()
 
-        page = int(request.args.get("page", 1))
+        page = int(request.args.get("page", 0))  # 0-based, matching Flask-Admin
         per_page = min(int(request.args.get("per_page", self.page_size)), 100)
         search = request.args.get("search", "")
-        # TODO: Implement sorting
-        # sort_by = request.args.get("sort", "")
-        # sort_desc = request.args.get("desc", "") == "1"
+        sort_by = request.args.get("sort", "")
+        sort_desc = request.args.get("desc", "") == "1"
+        if sort_by not in self.get_sortable_columns():
+            sort_by = ""
 
         async with self.get_database_session() as session:
-            # Build filters
             filters = {}
             if search and self.get_searchable_columns():
-                # Basic search implementation - database provider could enhance this
                 filters["search"] = search
+                filters["searchable_columns"] = self.get_searchable_columns()
 
-            # Get total count
             total_count = await self.database_provider.count(
                 self.model, session, **filters
             )
-            # Get records for current page
-            # Note: Pagination logic would be enhanced in a full implementation
-            items = await self.database_provider.get_all(self.model, session, **filters)
-
-            # Simple pagination by slicing
-            start_idx = (page - 1) * per_page
-            end_idx = start_idx + per_page
-            page_items = items[start_idx:end_idx]
+            items = await self.database_provider.get_all(
+                self.model,
+                session,
+                sort_by=sort_by,
+                sort_desc=sort_desc,
+                limit=per_page,
+                offset=page * per_page,
+                **filters,
+            )
 
             columns = self.get_columns_list()
             admin = getattr(self, "admin", None)
@@ -210,7 +214,7 @@ class ModelView(AdminView):
                 self.list_template,
                 admin=admin,
                 view=self,
-                items=page_items,
+                items=items,
                 total_count=total_count,
                 page=page,
                 per_page=per_page,
@@ -218,6 +222,8 @@ class ModelView(AdminView):
                 columns=columns,
                 column_labels=self.column_labels,
                 config=admin.config if admin else None,
+                sort_by=sort_by,
+                sort_desc=sort_desc,
             )
 
     async def create_view(self):
