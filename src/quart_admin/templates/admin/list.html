@@ -82,6 +82,18 @@
 
 <!-- Data Table - Newspaper Style -->
 {% if items %}
+{% if config.enable_batch_actions and actions %}
+<div class="flex gap-2 mb-4">
+    <span class="text-sm font-semibold uppercase tracking-wider self-center">With selected:</span>
+    {% for action_name, action_text in actions %}
+    <button type="button" class="print-button px-4 py-2 text-sm uppercase tracking-wider"
+            onclick="executeAction('{{ action_name }}')">{{ action_text }}</button>
+    {% endfor %}
+</div>
+<form id="action_form" method="POST" action="{{ view.get_action_url() }}" style="display:none">
+    <input type="hidden" name="action" id="action_name_input" value="">
+</form>
+{% endif %}
 <div class="spec-box bg-white overflow-hidden">
     <div class="text-xs text-gray-500 p-2 border-b border-gray-200 bg-gray-50 md:hidden">
         <i class="fas fa-arrows-alt-h mr-1"></i>
@@ -91,7 +103,7 @@
         <table class="min-w-full table-auto">
             <thead class="bg-gray-900 text-white">
                 <tr>
-                    {% if config.enable_batch_actions %}
+                    {% if config.enable_batch_actions and actions %}
                     <th class="px-4 py-3 text-left w-12">
                         <input type="checkbox" class="form-check-input" id="selectAll">
                     </th>
@@ -126,9 +138,9 @@
             <tbody class="divide-y divide-gray-200">
                 {% for item in items %}
                 <tr class="hover:bg-gray-50 {{ loop.cycle( 'bg-white', 'bg-gray-25') }}">
-                    {% if config.enable_batch_actions %}
+                    {% if config.enable_batch_actions and actions %}
                     <td class="px-4 py-3">
-                        <input type="checkbox" class="form-check-input row-select" value="{{ item.id }}">
+                        <input type="checkbox" class="form-check-input row-select action-checkbox" value="{{ item.id }}">
                     </td>
                     {% endif %}
 
@@ -271,4 +283,33 @@ document.querySelectorAll('.row-select').forEach(checkbox => {
     });
 });
 </script>
+{% if config.enable_batch_actions and actions %}
+<script>
+const actionsConfirmation = {{ actions_confirmation | tojson }};
+
+function executeAction(name) {
+    const checked = document.querySelectorAll('.action-checkbox:checked');
+    if (checked.length === 0) {
+        alert('Please select at least one record.');
+        return;
+    }
+    if (actionsConfirmation[name]) {
+        if (!confirm(actionsConfirmation[name])) {
+            return;
+        }
+    }
+    const form = document.getElementById('action_form');
+    document.getElementById('action_name_input').value = name;
+    form.querySelectorAll('input[name="rowid"]').forEach(el => el.remove());
+    checked.forEach(function(cb) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'rowid';
+        input.value = cb.value;
+        form.appendChild(input);
+    });
+    form.submit();
+}
+</script>
+{% endif %}
 {% endblock %}

@@ -8,6 +8,7 @@ Provides CRUD operations, customizable views, and extensible plugin architecture
 __version__ = "0.1.0"
 __author__ = "Hugo Baldwin"
 
+from .actions import action
 from .admin import QuartAdmin
 from .auth.base import AuthProvider
 from .auth.helpers import create_combined_check
@@ -19,6 +20,7 @@ from .views import AdminView
 from .views import ModelView
 
 __all__ = [
+    "action",
     "QuartAdmin",
     "AdminView",
     "ModelView",

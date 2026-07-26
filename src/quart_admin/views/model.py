@@ -7,18 +7,21 @@ from typing import List
 from typing import Optional
 from typing import Type
 
+from quart import Blueprint
 from quart import flash
 from quart import redirect
 from quart import render_template
 from quart import request
 
+from ..actions import ActionsMixin
+from ..actions import action
 from ..auth.base import AuthProvider
 from ..database.base import DatabaseProvider
 from ..forms.base import FormGenerator
 from .base import AdminView
 
 
-class ModelView(AdminView):
+class ModelView(AdminView, ActionsMixin):
     """Database model admin view with CRUD operations."""
 
     # Model-/form settings — override as class attributes (Flask-Admin style)
@@ -77,6 +80,7 @@ class ModelView(AdminView):
 
         self.model = model
         self.form_generator = form_generator
+        self.init_actions()
 
     # Lifecycle hooks - override in subclass to add custom logic
     async def on_model_change(self, form, model, is_created: bool) -> None:
@@ -114,6 +118,20 @@ class ModelView(AdminView):
             model: The model instance that was deleted
         """
         pass
+
+    def create_blueprint(self, parent_blueprint: Blueprint):
+        """Register CRUD routes plus the batch-action endpoint."""
+        super().create_blueprint(parent_blueprint)
+        parent_blueprint.add_url_rule(
+            f"{self.url}/action/",
+            endpoint=f"{self.endpoint}_action",
+            view_func=self._wrap_with_auth(self.action_view),
+            methods=["POST"],
+        )
+
+    async def action_view(self):
+        """Dispatch a batch action POST to handle_action."""
+        return await self.handle_action()
 
     def get_database_session(self):
         """Get database session from provider."""
@@ -209,6 +227,7 @@ class ModelView(AdminView):
             )
 
             columns = self.get_columns_list()
+            actions, actions_confirmation = self.get_actions_list()
             admin = getattr(self, "admin", None)
             return await render_template(
                 self.list_template,
@@ -224,6 +243,8 @@ class ModelView(AdminView):
                 config=admin.config if admin else None,
                 sort_by=sort_by,
                 sort_desc=sort_desc,
+                actions=actions,
+                actions_confirmation=actions_confirmation,
             )
 
     async def create_view(self):
@@ -434,6 +455,35 @@ class ModelView(AdminView):
             await flash(f"{self.name} deleted successfully!", "success")
 
         return redirect(self.get_list_url())
+
+    @action(
+        "delete",
+        "Delete Selected",
+        "Are you sure you want to delete the selected records?",
+    )
+    async def delete_selected(self, ids):
+        """Built-in batch action: delete all records matching the provided IDs."""
+        deleted_models = []
+        async with self.get_database_session() as session:
+            pk_fields = self.database_provider.get_primary_key_fields(self.model)
+            pk_field = pk_fields[0]
+            for id_str in ids:
+                pk_values = {pk_field: int(id_str)}
+                model = await self.database_provider.get_model_by_pk(
+                    self.model, session, pk_values
+                )
+                if model:
+                    await self.on_model_delete(model)
+                    await self.database_provider.delete(
+                        self.model, session, pk_values, commit=False
+                    )
+                    deleted_models.append(model)
+            await session.commit()
+
+        for model in deleted_models:
+            await self.after_model_delete(model)
+
+        await flash(f"{len(deleted_models)} {self.name} record(s) deleted.", "success")
 
     def format_column_value(self, item: Dict[str, Any], column: str) -> str:
         """Format column value using custom formatters or defaults."""
