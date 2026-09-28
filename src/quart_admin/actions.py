@@ -29,18 +29,17 @@ class ActionsMixin:
 
     def init_actions(self):
         """Scan for @action-decorated methods and populate the actions registry."""
-        self._actions = []  # [(name, text), ...]
-        self._actions_data = {}  # name -> (handler, text, confirmation)
+        self._actions = []
+        self._actions_data = {}
 
         for attr_name in dir(self):
-            # Check the unbound method on the class so the _action attribute is visible
             attr = getattr(type(self), attr_name, None)
             if attr is None or not hasattr(attr, "_action"):
                 continue
             action_name, action_text, action_confirmation = attr._action
             self._actions.append((action_name, action_text))
             self._actions_data[action_name] = (
-                getattr(self, attr_name),  # bound method for calling later
+                getattr(self, attr_name),
                 action_text,
                 action_confirmation,
             )

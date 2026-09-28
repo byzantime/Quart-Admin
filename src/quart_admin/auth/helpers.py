@@ -18,7 +18,6 @@ def create_domain_check(allowed_domains: List[str]) -> Callable:
         >>> staff_check({'email': 'user@example.com'})  # Returns True
         >>> staff_check({'email': 'user@other.com'})   # Returns False
     """
-    # Normalize domains to ensure they start with @
     normalized_domains = []
     for domain in allowed_domains:
         if not domain.startswith("@"):
@@ -49,7 +48,6 @@ def create_email_list_check(allowed_emails: List[str]) -> Callable:
         >>> admin_check({'email': 'admin@example.com'})  # Returns True
         >>> admin_check({'email': 'user@example.com'})   # Returns False
     """
-    # Normalize emails to lowercase for comparison
     normalized_emails = {email.lower() for email in allowed_emails}
 
     def check_email(user_data):

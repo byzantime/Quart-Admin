@@ -18,7 +18,6 @@ class TestLifecycleHooks:
             model=self.mock_model, database_provider=self.mock_db_provider
         )
 
-    # 1. Test default hooks do nothing
     @pytest.mark.asyncio
     async def test_on_model_change_default_does_nothing(self):
         """Default on_model_change should do nothing."""
@@ -43,7 +42,6 @@ class TestLifecycleHooks:
         result = await self.view.after_model_delete(MagicMock())
         assert result is None
 
-    # 2. Test hooks can modify model
     @pytest.mark.asyncio
     async def test_on_model_change_can_modify_model(self):
         """on_model_change should be able to modify model before save."""
@@ -61,7 +59,6 @@ class TestLifecycleHooks:
         await view.on_model_change(MagicMock(), mock_model, True)
         assert mock_model.email == "test@example.com"
 
-    # 3. Test is_created flag
     @pytest.mark.asyncio
     async def test_on_model_change_receives_is_created_flag(self):
         """on_model_change should receive correct is_created flag."""
@@ -79,7 +76,6 @@ class TestLifecycleHooks:
 
         assert received_flags == [True, False]
 
-    # 4. Test hook exception handling
     @pytest.mark.asyncio
     async def test_on_model_change_exception_propagates(self):
         """Exceptions in on_model_change should propagate."""

@@ -57,17 +57,13 @@ class QuartAdmin:
         app.extensions = getattr(app, "extensions", {})
         app.extensions["quart_admin"] = self
 
-        # Store app for later blueprint registration
         self.app = app
 
-        # Set up template folder
         if not self.config.template_folder:
-            # Use built-in templates
             template_folder = os.path.join(os.path.dirname(__file__), "templates")
         else:
             template_folder = self.config.template_folder
 
-        # Create blueprint
         self.blueprint = Blueprint(
             self.config.name,
             __name__,
@@ -76,10 +72,8 @@ class QuartAdmin:
             static_folder=self.config.static_folder,
         )
 
-        # Register admin index route
         @self.blueprint.route("/")
         async def index():
-            # Apply auth if configured
             if self.config.require_auth and self.auth_provider:
                 if not await self.auth_provider.is_authenticated():
                     from quart import abort
@@ -109,28 +103,22 @@ class QuartAdmin:
         Args:
             view: AdminView instance to add
         """
-        # Set admin instance reference
         view.admin = self
 
-        # Set providers on the view if not already set
         if not view.auth_provider and self.auth_provider:
             view.auth_provider = self.auth_provider
         if not view.database_provider and self.database_provider:
             view.database_provider = self.database_provider
 
-        # Add to views registry
         self._views[view.name] = view
 
-        # Add to category
         category = view.category or "Default"
         if category not in self._categories:
             self._categories[category] = []
         self._categories[category].append(view)
 
-        # Create blueprint routes
         view.create_blueprint(self.blueprint)
 
-        # Register model if it's a ModelView
         if isinstance(view, ModelView) and hasattr(view, "model"):
             self._models[view.name] = view.model
 
@@ -197,18 +185,14 @@ class QuartAdmin:
             try:
                 self.auth_provider = QuartAuthProvider()
             except ImportError:
-                # QuartAuth not available, skip auth
                 pass
 
         if not skip_database and not self.database_provider:
             from .database.sqlalchemy import SQLAlchemyProvider
 
             try:
-                # Would need to get session factory from app
-                # This is a placeholder - would be configured properly
                 self.database_provider = SQLAlchemyProvider()
             except ImportError:
-                # SQLAlchemy not available
                 pass
 
         if not skip_forms and not self.form_generator:

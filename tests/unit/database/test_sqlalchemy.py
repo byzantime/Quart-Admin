@@ -20,7 +20,6 @@ class TestSQLAlchemyProviderWithMocks:
                 "sqlalchemy.inspection": MagicMock(),
             },
         ):
-            # Mock the specific functions we import
             mock_select = MagicMock()
             mock_func = MagicMock()
             mock_inspect = MagicMock()
@@ -84,7 +83,6 @@ class TestSQLAlchemyProviderWithMocks:
         mock_model.__name__ = "TestModel"
         mock_model.__tablename__ = "test_models"
 
-        # Mock column with primary key
         mock_column = MagicMock()
         mock_column.name = "id"
         mock_column.type = "INTEGER"
@@ -92,12 +90,10 @@ class TestSQLAlchemyProviderWithMocks:
         mock_column.primary_key = True
         mock_column.default = None
 
-        # Mock inspector
         mock_inspector = MagicMock()
         mock_inspector.columns = [mock_column]
         mock_inspector.relationships = []
 
-        # Make inspect return our mock inspector
         mock_sqlalchemy_modules["inspect"].return_value = mock_inspector
 
         return mock_model
@@ -170,13 +166,11 @@ class TestSQLAlchemyProviderWithMocks:
         """Test get_all method."""
         _, mock_session = mock_session_factory
 
-        # Mock query result
         mock_result = MagicMock()
         mock_instance = MagicMock()
         mock_result.scalars.return_value.all.return_value = [mock_instance]
         mock_session.execute.return_value = mock_result
 
-        # Mock _model_to_dict
         with patch.object(
             sqlalchemy_provider, "_model_to_dict", return_value={"id": 1}
         ) as mock_to_dict:
@@ -185,7 +179,6 @@ class TestSQLAlchemyProviderWithMocks:
             assert result == [{"id": 1}]
             mock_to_dict.assert_called_once_with(mock_instance)
 
-        # Verify select was called
         mock_sqlalchemy_modules["select"].assert_called_once_with(mock_model)
 
     async def test_get_all_with_filters(
@@ -198,7 +191,6 @@ class TestSQLAlchemyProviderWithMocks:
         """Test get_all method with filters."""
         _, mock_session = mock_session_factory
 
-        # Mock the model to have a status attribute
         mock_column = MagicMock()
         mock_model.status = mock_column
 
@@ -209,7 +201,6 @@ class TestSQLAlchemyProviderWithMocks:
         with patch.object(sqlalchemy_provider, "_model_to_dict", return_value={}):
             await sqlalchemy_provider.get_all(mock_model, mock_session, status="active")
 
-        # Verify the mock column was accessed
         assert mock_model.status == mock_column
 
     async def test_get_by_pk(
@@ -261,7 +252,6 @@ class TestSQLAlchemyProviderWithMocks:
 
         result = await sqlalchemy_provider.create(mock_model, mock_session, name="test")
 
-        # Now returns the model instance, not a dict
         assert result is mock_instance
         mock_model.assert_called_once_with(name="test")
         mock_session.add.assert_called_once_with(mock_instance)
@@ -277,16 +267,13 @@ class TestSQLAlchemyProviderWithMocks:
         mock_result.scalar_one_or_none.return_value = mock_instance
         mock_session.execute.return_value = mock_result
 
-        # Mock the instance to have a name attribute
-        mock_instance.name = None  # Initial value
+        mock_instance.name = None
 
         result = await sqlalchemy_provider.update(
             mock_model, mock_session, {"id": 1}, name="updated"
         )
 
-        # Now returns the model instance, not a dict
         assert result is mock_instance
-        # Verify the attribute was set
         assert mock_instance.name == "updated"
         mock_session.flush.assert_called_once()
         mock_session.refresh.assert_called_once_with(mock_instance)
@@ -318,7 +305,6 @@ class TestSQLAlchemyProviderWithMocks:
 
         result = await sqlalchemy_provider.delete(mock_model, mock_session, {"id": 1})
 
-        # Now returns the deleted model instance, not True
         assert result is mock_instance
         mock_session.delete.assert_called_once_with(mock_instance)
         mock_session.commit.assert_called_once()
@@ -334,7 +320,6 @@ class TestSQLAlchemyProviderWithMocks:
         mock_session.execute.return_value = mock_result
 
         result = await sqlalchemy_provider.delete(mock_model, mock_session, {"id": 999})
-        # Now returns None instead of False
         assert result is None
 
     async def test_count(
@@ -351,7 +336,6 @@ class TestSQLAlchemyProviderWithMocks:
         mock_result.scalar.return_value = 5
         mock_session.execute.return_value = mock_result
 
-        # Mock func.count() call
         mock_count = MagicMock()
         mock_sqlalchemy_modules["func"].count.return_value = mock_count
         mock_select_query = MagicMock()
@@ -361,7 +345,6 @@ class TestSQLAlchemyProviderWithMocks:
         result = await sqlalchemy_provider.count(mock_model, mock_session)
         assert result == 5
 
-        # Verify func.count() was called
         mock_sqlalchemy_modules["func"].count.assert_called_once()
         mock_sqlalchemy_modules["select"].assert_called_once_with(mock_count)
 
@@ -378,7 +361,6 @@ class TestSQLAlchemyProviderWithMocks:
         assert result[0]["nullable"] is False
         assert result[0]["primary_key"] is True
 
-        # Verify inspect was called
         mock_sqlalchemy_modules["inspect"].assert_called_with(mock_model)
 
     def test_get_primary_key_fields(
@@ -397,7 +379,7 @@ class TestSQLAlchemyProviderWithMocks:
         result = sqlalchemy_provider.get_model_relationships(mock_model)
 
         assert isinstance(result, dict)
-        assert len(result) == 0  # No relationships in mock
+        assert len(result) == 0
         mock_sqlalchemy_modules["inspect"].assert_called_with(mock_model)
 
     def test_model_to_dict(
@@ -407,7 +389,6 @@ class TestSQLAlchemyProviderWithMocks:
         mock_instance = MagicMock()
         mock_instance.__class__ = mock_model
 
-        # Mock the inspector result to be simpler to avoid recursion
         mock_column = MagicMock()
         mock_column.name = "id"
         mock_sqlalchemy_modules["inspect"].return_value.columns = [mock_column]
@@ -436,7 +417,6 @@ class TestSQLAlchemyProviderWithMocks:
         mock_result.scalars.return_value.all.return_value = []
         mock_session.execute.return_value = mock_result
 
-        # Make query chain self-referential for easy assertion
         mock_query = mock_sqlalchemy_modules["select"].return_value
         mock_query.where.return_value = mock_query
         mock_query.limit.return_value = mock_query
@@ -481,11 +461,8 @@ class TestSQLAlchemyProviderWithMocks:
                 searchable_columns=["name"],
             )
 
-        # ilike called with '%foo%' (middle wildcard, no prefix)
         mock_sql_cast.return_value.ilike.assert_called_once_with("%foo%")
-        # or_() wraps the ilike result
         mock_or_.assert_called_once_with(mock_sql_cast.return_value.ilike.return_value)
-        # where() called once (one term)
         mock_query.where.assert_called_once_with(mock_or_.return_value)
 
     async def test_get_all_with_search_multi_term(
@@ -515,7 +492,6 @@ class TestSQLAlchemyProviderWithMocks:
                 searchable_columns=["name"],
             )
 
-        # where() called twice: once per term
         assert mock_query.where.call_count == 2
 
     async def test_get_all_with_search_prefix_startswith(
@@ -604,7 +580,6 @@ class TestSQLAlchemyProviderWithMocks:
                 sort_desc=False,
             )
 
-        # order_by called with the column attribute directly (no desc wrapper)
         mock_query.order_by.assert_called_once_with(mock_model.name)
         mock_desc.assert_not_called()
 
@@ -683,14 +658,10 @@ class TestSQLAlchemyProviderImportFailure:
         """Test that importing SQLAlchemy provider fails when modules are not available."""
         import sys
 
-        # Setting a module to None in sys.modules makes Python treat it as
-        # unimportable, even when the package is installed on disk.
         with patch.dict(
             "sys.modules",
             {"sqlalchemy": None, "sqlalchemy.inspection": None},
         ):
-            # Clear any cached quart_admin import so Python re-evaluates it
-            # under the patched sys.modules.
             mods_to_clear = [
                 k for k in sys.modules if k.startswith("quart_admin.database")
             ]
@@ -711,11 +682,9 @@ class TestSQLAlchemyProviderImportFailure:
                 "sqlalchemy.inspection": MagicMock(),
             },
         ):
-            # Mock the specific imports
             with patch("quart_admin.database.sqlalchemy.select"), patch(
                 "quart_admin.database.sqlalchemy.func"
             ), patch("quart_admin.database.sqlalchemy.inspect"):
-                # Should be able to import successfully
                 from quart_admin.database.sqlalchemy import SQLAlchemyProvider
 
                 assert SQLAlchemyProvider is not None

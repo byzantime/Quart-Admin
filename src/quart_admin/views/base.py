@@ -46,25 +46,21 @@ class AdminView:
         self.auth_provider = auth_provider
         self.database_provider = database_provider
 
-        # View capabilities
         self.can_create = True
         self.can_edit = True
         self.can_delete = True
         self.can_view_details = True
 
-        # Pagination
         self.page_size = 20
 
-        # Template names - can be overridden
         self.list_template = "admin/list.html"
         self.edit_template = "admin/edit.html"
         self.create_template = "admin/create.html"
-        self.form_template = "admin/form.html"  # Unified form template
+        self.form_template = "admin/form.html"
         self.details_template = "admin/details.html"
 
     def create_blueprint(self, parent_blueprint: Blueprint):
         """Create and register routes on the parent blueprint."""
-        # List view
         parent_blueprint.add_url_rule(
             self.url,
             endpoint=f"{self.endpoint}_list",
@@ -72,9 +68,7 @@ class AdminView:
             methods=["GET"],
         )
 
-        # Unified form view - handles both create and edit
         if self.can_create or self.can_edit:
-            # Create view (no ID parameter)
             if self.can_create:
                 parent_blueprint.add_url_rule(
                     f"{self.url}/new",
@@ -83,7 +77,6 @@ class AdminView:
                     methods=["GET", "POST"],
                 )
 
-            # Edit view (with ID parameter)
             if self.can_edit:
                 parent_blueprint.add_url_rule(
                     f"{self.url}/<int:id>/edit",
@@ -92,7 +85,6 @@ class AdminView:
                     methods=["GET", "POST"],
                 )
 
-        # Details view
         if self.can_view_details:
             parent_blueprint.add_url_rule(
                 f"{self.url}/<int:id>",
@@ -101,7 +93,6 @@ class AdminView:
                 methods=["GET"],
             )
 
-        # Delete view
         if self.can_delete:
             parent_blueprint.add_url_rule(
                 f"{self.url}/<int:id>/delete",
@@ -116,11 +107,9 @@ class AdminView:
             if asyncio.iscoroutinefunction(view_func):
 
                 async def async_wrapper(*args, **kwargs):
-                    # Always check authentication for admin endpoints
                     if not await self.auth_provider.is_authenticated():
                         abort(401, "Authentication required")
 
-                    # Always check admin access for admin endpoints
                     if not await self.auth_provider.has_admin_access():
                         abort(403, "Admin access required")
 
@@ -128,7 +117,6 @@ class AdminView:
 
                 return async_wrapper
             else:
-                # For sync functions, use the admin_required decorator
                 return self.auth_provider.admin_required(view_func)
         return view_func
 
@@ -147,10 +135,8 @@ class AdminView:
     async def form_view(self, id: int = None):
         """Unified form view for both create and edit operations."""
         if id is None:
-            # Create mode
             return await self.create_view()
         else:
-            # Edit mode
             return await self.edit_view(id)
 
     async def create_view(self):

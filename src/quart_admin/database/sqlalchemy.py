@@ -68,12 +68,10 @@ class SQLAlchemyProvider(DatabaseProvider):
         sort_by = filters.pop("sort_by", None)
         sort_desc_flag = filters.pop("sort_desc", False)
 
-        # Apply regular column filters
         for key, value in filters.items():
             if hasattr(model, key):
                 query = query.where(getattr(model, key) == value)
 
-        # Apply search: one .where() per term (AND logic across terms, OR across columns)
         if search and searchable_columns:
             valid_columns = [c for c in searchable_columns if hasattr(model, c)]
             for term in search.split():
@@ -129,7 +127,7 @@ class SQLAlchemyProvider(DatabaseProvider):
         """
         instance = model(**data)
         session.add(instance)
-        await session.flush()  # Get the ID
+        await session.flush()
         if commit:
             await session.commit()
         return instance
@@ -229,7 +227,6 @@ class SQLAlchemyProvider(DatabaseProvider):
         filters.pop("sort_by", None)
         filters.pop("sort_desc", None)
 
-        # Apply regular column filters
         for key, value in filters.items():
             if hasattr(model, key):
                 query = query.where(getattr(model, key) == value)

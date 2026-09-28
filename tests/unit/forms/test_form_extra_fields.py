@@ -9,10 +9,6 @@ import pytest
 from quart_admin.forms.wtforms import WTFormsGenerator
 from quart_admin.views.model import ModelView
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
 
 def _make_db_provider(fields=None):
     provider = MagicMock()
@@ -24,11 +20,6 @@ def _make_model():
     model = MagicMock()
     model.__name__ = "TestModel"
     return model
-
-
-# ---------------------------------------------------------------------------
-# TestWTFormsExtraFields
-# ---------------------------------------------------------------------------
 
 
 class TestWTFormsExtraFields:
@@ -118,7 +109,6 @@ class TestWTFormsExtraFields:
                 self.model, db_provider, extra_fields=extra
             )
 
-        # The last setattr wins — PasswordField should override the auto StringField
         assert isinstance(form.token, PasswordField)
 
     def test_none_extra_fields_no_crash(self, flask_app):
@@ -131,11 +121,6 @@ class TestWTFormsExtraFields:
 
         assert not hasattr(form_none, "password")
         assert not hasattr(form_omitted, "password")
-
-
-# ---------------------------------------------------------------------------
-# TestModelViewFormExtraFields
-# ---------------------------------------------------------------------------
 
 
 class TestModelViewFormExtraFields:
@@ -216,7 +201,6 @@ class TestModelViewFormExtraFields:
         extra = {"password": PasswordField("Password", validators=[Optional()])}
         view = self._make_view(extra_fields=extra)
 
-        # db provider needs to return an item so the view doesn't redirect
         view.database_provider.get_by_pk = AsyncMock(
             return_value={"id": 1, "name": "x"}
         )
@@ -263,8 +247,6 @@ class TestModelViewFormExtraFields:
         view.database_provider.create = AsyncMock(return_value=MagicMock())
         view.get_list_url = MagicMock(return_value="/admin/testmodel/")
 
-        # MagicMock(name=...) sets the mock's repr, not the `.name` attribute,
-        # so it must be assigned explicitly after construction.
         name_field = MagicMock()
         name_field.name = "name"
         name_field.data = "Alice"
@@ -288,11 +270,6 @@ class TestModelViewFormExtraFields:
         create_kwargs = view.database_provider.create.call_args[1]
         assert "password" not in create_kwargs
         assert create_kwargs.get("name") == "Alice"
-
-
-# ---------------------------------------------------------------------------
-# TestFlaskAdminParity
-# ---------------------------------------------------------------------------
 
 
 class TestFlaskAdminParity:
