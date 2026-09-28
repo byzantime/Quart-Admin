@@ -55,11 +55,6 @@ test = [
     "flask-admin>=2.0.0",
 ]
 
-[tool.black]
-line-length = 88
-target-version = ['py38']
-include = '\.pyi?$'
-
 [tool.isort]
 profile = "black"
 multi_line_output = 3
@@ -81,7 +76,7 @@ select = [
     "C4", # flake8-comprehensions
 ]
 ignore = [
-    "E501",  # line too long, handled by black
+    "E501",  # line too long, handled by ruff format
     "B008",  # do not perform function calls in argument defaults
 ]
 

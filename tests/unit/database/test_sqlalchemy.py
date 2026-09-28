@@ -1,5 +1,6 @@
 """Test the SQLAlchemy database provider using mocks."""
 
+from unittest.mock import DEFAULT
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -29,16 +30,15 @@ class TestSQLAlchemyProviderWithMocks:
             mock_unicode = MagicMock()
             mock_sql_cast = MagicMock()
 
-            with patch("quart_admin.database.sqlalchemy.select", mock_select), patch(
-                "quart_admin.database.sqlalchemy.func", mock_func
-            ), patch("quart_admin.database.sqlalchemy.inspect", mock_inspect), patch(
-                "quart_admin.database.sqlalchemy.or_", mock_or_
-            ), patch(
-                "quart_admin.database.sqlalchemy.desc", mock_desc
-            ), patch(
-                "quart_admin.database.sqlalchemy.Unicode", mock_unicode
-            ), patch(
-                "quart_admin.database.sqlalchemy.sql_cast", mock_sql_cast
+            with patch.multiple(
+                "quart_admin.database.sqlalchemy",
+                select=mock_select,
+                func=mock_func,
+                inspect=mock_inspect,
+                or_=mock_or_,
+                desc=mock_desc,
+                Unicode=mock_unicode,
+                sql_cast=mock_sql_cast,
             ):
                 yield {
                     "select": mock_select,
@@ -712,9 +712,12 @@ class TestSQLAlchemyProviderImportFailure:
             },
         ):
             # Mock the specific imports
-            with patch("quart_admin.database.sqlalchemy.select"), patch(
-                "quart_admin.database.sqlalchemy.func"
-            ), patch("quart_admin.database.sqlalchemy.inspect"):
+            with patch.multiple(
+                "quart_admin.database.sqlalchemy",
+                select=DEFAULT,
+                func=DEFAULT,
+                inspect=DEFAULT,
+            ):
                 # Should be able to import successfully
                 from quart_admin.database.sqlalchemy import SQLAlchemyProvider
 

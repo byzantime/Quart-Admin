@@ -672,7 +672,7 @@ class TestWTFormsIntegration:
                 assert isinstance(converted_obj["metadata"], str)
 
             except Exception as e:
-                pytest.fail(f"Test case {i+1} raised unexpected exception: {e}")
+                pytest.fail(f"Test case {i + 1} raised unexpected exception: {e}")
 
     def test_performance_with_large_objects(self):
         """Test performance characteristics with large JSON objects."""

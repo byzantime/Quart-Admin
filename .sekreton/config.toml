@@ -1,0 +1,13 @@
+schema = 1
+
+[setup]
+run = "uv sync --all-extras --all-groups"
+
+[jobs.lint]
+run = ["uv run ruff check .", "uv run ruff format --check ."]
+
+[jobs.pytest]
+run = "uv run pytest tests/ -v"
+
+[jobs.smoke]
+run = "uv run python -c \"from quart_admin import QuartAdmin; from quart import Quart; app = Quart(__name__); admin = QuartAdmin(app); print('QuartAdmin initialised OK')\""
