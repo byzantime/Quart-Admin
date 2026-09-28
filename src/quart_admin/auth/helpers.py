@@ -5,20 +5,14 @@ from typing import List
 
 
 def create_domain_check(allowed_domains: List[str]) -> Callable:
-    """Create a domain check function for admin access.
+    """Return a check that passes if the user's email ends with an allowed domain.
 
-    Args:
-        allowed_domains: List of allowed email domains (e.g., ['@company.com', '@example.com'])
+    ``allowed_domains`` are email domains such as ``'@example.com'``; a missing
+    leading ``@`` is added and matching is case-insensitive.
 
-    Returns:
-        Function that checks if user email ends with allowed domain
-
-    Example:
-        >>> staff_check = create_domain_check(['@example.com'])
-        >>> staff_check({'email': 'user@example.com'})  # Returns True
-        >>> staff_check({'email': 'user@other.com'})   # Returns False
+    >>> create_domain_check(['@example.com'])({'email': 'user@example.com'})
+    True
     """
-    # Normalize domains to ensure they start with @
     normalized_domains = []
     for domain in allowed_domains:
         if not domain.startswith("@"):
@@ -36,20 +30,13 @@ def create_domain_check(allowed_domains: List[str]) -> Callable:
 
 
 def create_email_list_check(allowed_emails: List[str]) -> Callable:
-    """Create an email allowlist check function for admin access.
+    """Return a check that passes if the user's email is in ``allowed_emails``.
 
-    Args:
-        allowed_emails: List of specific allowed email addresses
+    Matching is case-insensitive.
 
-    Returns:
-        Function that checks if user email is in the allowed list
-
-    Example:
-        >>> admin_check = create_email_list_check(['admin@example.com'])
-        >>> admin_check({'email': 'admin@example.com'})  # Returns True
-        >>> admin_check({'email': 'user@example.com'})   # Returns False
+    >>> create_email_list_check(['admin@example.com'])({'email': 'admin@example.com'})
+    True
     """
-    # Normalize emails to lowercase for comparison
     normalized_emails = {email.lower() for email in allowed_emails}
 
     def check_email(user_data):
@@ -62,21 +49,12 @@ def create_email_list_check(allowed_emails: List[str]) -> Callable:
 
 
 def create_combined_check(*check_functions: Callable) -> Callable:
-    """Create a combined check that passes if ANY of the provided checks pass.
+    """Return a check that passes if ANY of ``check_functions`` passes (OR logic).
 
-    Args:
-        *check_functions: Multiple check functions to combine with OR logic
-
-    Returns:
-        Function that returns True if any check function returns True
-
-    Example:
-        >>> domain_check = create_domain_check(['@example.com'])
-        >>> email_check = create_email_list_check(['admin@external.com'])
-        >>> combined = create_combined_check(domain_check, email_check)
-        >>> combined({'email': 'user@example.com'})     # True (domain match)
-        >>> combined({'email': 'admin@external.com'})  # True (email match)
-        >>> combined({'email': 'user@other.com'})      # False (no match)
+    >>> combined = create_combined_check(
+    ...     create_domain_check(['@example.com']),
+    ...     create_email_list_check(['admin@external.com']),
+    ... )
     """
 
     def check_any(user_data):

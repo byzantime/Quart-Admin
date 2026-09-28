@@ -13,10 +13,6 @@ from quart_admin.actions import action
 from quart_admin.config import QuartAdminConfig
 from quart_admin.views.model import ModelView
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
 
 def _make_view(view_class=None):
     """Instantiate a ModelView (or subclass) with a mock model and database."""
@@ -43,11 +39,6 @@ def _make_app_with_view(view_class):
     app.register_blueprint(bp)
 
     return app, view
-
-
-# ---------------------------------------------------------------------------
-# 1. Action decorator registration
-# ---------------------------------------------------------------------------
 
 
 class TestActionDecorator:
@@ -86,11 +77,6 @@ class TestActionDecorator:
         assert "delete" in names
 
 
-# ---------------------------------------------------------------------------
-# 2. Action endpoint dispatches to the registered handler
-# ---------------------------------------------------------------------------
-
-
 class TestActionEndpoint:
     @pytest.fixture
     def app_and_calls(self):
@@ -110,7 +96,6 @@ class TestActionEndpoint:
         async with app.test_client() as client:
             response = await client.post(
                 f"/admin{view.url}/action/",
-                # Multi-value fields must be sent as a list of tuples
                 form=[("action", "foo"), ("rowid", "1"), ("rowid", "2")],
             )
         assert response.status_code == 302
@@ -128,17 +113,11 @@ class TestActionEndpoint:
         assert view.endpoint in location or view.url in location
 
 
-# ---------------------------------------------------------------------------
-# 3. Default delete_selected action
-# ---------------------------------------------------------------------------
-
-
 class TestDeleteSelectedAction:
     @pytest.fixture
     def view_with_mock_db(self):
         view, mock_model, mock_db = _make_view()
 
-        # Build a fake session context manager
         mock_session = AsyncMock()
         mock_session.commit = AsyncMock()
 
@@ -152,7 +131,6 @@ class TestDeleteSelectedAction:
         mock_db.get_session.return_value = FakeSessionCtx()
         mock_db.get_primary_key_fields.return_value = ["id"]
 
-        # Return a fake model object for each id
         fake_instance = MagicMock()
         mock_db.get_model_by_pk = AsyncMock(return_value=fake_instance)
         mock_db.delete = AsyncMock(return_value=True)
@@ -206,7 +184,6 @@ class TestDeleteSelectedAction:
     @pytest.mark.asyncio
     async def test_delete_selected_skips_missing_records(self, view_with_mock_db):
         view, mock_db, _ = view_with_mock_db
-        # Only one of the two records exists
         mock_db.get_model_by_pk = AsyncMock(side_effect=[None, MagicMock()])
         app = Quart(__name__)
         app.config["SECRET_KEY"] = "test"
@@ -221,11 +198,6 @@ class TestDeleteSelectedAction:
 
         assert mock_db.delete.call_count == 1
         assert "1" in flash_calls[0]
-
-
-# ---------------------------------------------------------------------------
-# 4. Unknown action name returns 400
-# ---------------------------------------------------------------------------
 
 
 class TestUnknownActionName:

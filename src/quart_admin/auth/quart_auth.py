@@ -38,7 +38,6 @@ class QuartAuthProvider(AuthProvider):
             user = await self.get_current_user()
             return self.admin_check(user)
 
-        # Default: any authenticated user has admin access
         return True
 
     async def get_current_user(self) -> Optional[Dict[str, Any]]:
@@ -52,7 +51,6 @@ class QuartAuthProvider(AuthProvider):
             if self.user_loader:
                 return await self.user_loader()
 
-            # Default: return basic user info
             return {"id": await current_user.auth_id, "authenticated": True}
         except ImportError as err:
             raise ImportError(

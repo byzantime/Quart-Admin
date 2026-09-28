@@ -11,37 +11,29 @@ from typing import Optional
 class QuartAdminConfig:
     """Configuration for Quart-Admin."""
 
-    # Basic settings
     name: str = "admin"
     url_prefix: str = "/admin"
 
-    # Template settings
     template_folder: Optional[str] = None
     static_folder: Optional[str] = None
     base_template: str = "admin/base.html"
 
-    # Pagination
     default_page_size: int = 20
     max_page_size: int = 100
 
-    # Features
     enable_search: bool = True
     enable_batch_actions: bool = True
 
-    # UI settings
     site_name: str = "Admin"
     site_logo: Optional[str] = None
     brand_color: str = "#007bff"
 
-    # Security
     require_auth: bool = True
     csrf_protection: bool = True
 
-    # Custom settings
     custom_css: Optional[str] = None
     custom_js: Optional[str] = None
 
-    # Plugin configurations
     auth_config: Dict[str, Any] = field(default_factory=dict)
     database_config: Dict[str, Any] = field(default_factory=dict)
 

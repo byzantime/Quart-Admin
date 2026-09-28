@@ -72,16 +72,10 @@ class DatabaseProvider(ABC):
     async def update(
         self, model: Type, session: Any, pk_values: Dict[str, Any], **data
     ) -> Dict[str, Any]:
-        """Update existing record.
+        """Update the ``model`` record identified by ``pk_values``.
 
-        Args:
-            model: Model class to update.
-            session: Database session.
-            pk_values: Dictionary of primary key field names and values.
-            **data: Updated data.
-
-        Returns:
-            Dict[str, Any]: Updated record as dictionary.
+        ``pk_values`` maps primary key field names to values; ``**data`` holds
+        the updated field values. Returns the updated record as a dictionary.
         """
         pass
 

@@ -24,7 +24,6 @@ from .base import AdminView
 class ModelView(AdminView, ActionsMixin):
     """Database model admin view with CRUD operations."""
 
-    # Model-/form settings — override as class attributes (Flask-Admin style)
     column_list: Optional[List[str]] = None
     column_searchable_list: Optional[List[str]] = None
     column_filters: Optional[List[str]] = None
@@ -34,10 +33,6 @@ class ModelView(AdminView, ActionsMixin):
     form_columns: Optional[List[str]] = None
     form_excluded_columns: Optional[List[str]] = None
     form_validators: Dict[str, List[Callable]] = {}
-    # Extra fields injected into the generated form (e.g. a plaintext password field).
-    # These are excluded from the create()/update() kwargs automatically since they
-    # rarely map to a model column directly; read raw submitted values off `form` in
-    # on_model_change to hash/transform them onto the model before it is committed.
     form_extra_fields: Optional[Dict[str, Any]] = None
 
     def __init__(
@@ -52,18 +47,11 @@ class ModelView(AdminView, ActionsMixin):
         form_generator: Optional[FormGenerator] = None,
         **kwargs,
     ):
-        """Initialize ModelView.
+        """Initialize a ModelView for the database ``model`` class.
 
-        Args:
-            model: Database model class
-            name: Human-readable name (defaults to model.__name__)
-            category: Category for grouping views
-            endpoint: Blueprint endpoint name
-            url: URL pattern
-            auth_provider: Authentication provider
-            database_provider: Database provider
-            form_generator: Form generator for creating/editing forms
-            **kwargs: Additional arguments for parent class
+        ``name`` defaults to ``model.__name__``. ``form_generator`` builds the
+        create/edit forms; the remaining arguments and ``**kwargs`` are passed
+        to ``AdminView``.
         """
         if name is None:
             name = model.__name__
@@ -82,9 +70,11 @@ class ModelView(AdminView, ActionsMixin):
         self.form_generator = form_generator
         self.init_actions()
 
-    # Lifecycle hooks - override in subclass to add custom logic
     async def on_model_change(self, form, model, is_created: bool) -> None:
         """Called before model is created/updated. Override to add custom logic.
+
+        ``form_extra_fields`` values are excluded from create()/update()
+        kwargs; read them off ``form`` here to hash/transform onto ``model``.
 
         Args:
             form: The form with validated data
@@ -150,7 +140,6 @@ class ModelView(AdminView, ActionsMixin):
         if self.column_list:
             return self.column_list
 
-        # Default to all model fields
         fields = self.get_model_fields()
         return [field["name"] for field in fields if not field.get("is_relationship")]
 
@@ -178,7 +167,6 @@ class ModelView(AdminView, ActionsMixin):
             if field.name != "csrf_token" and field.data is not None:
                 value = field.data
 
-                # Convert JSON string fields back to Python objects
                 if (
                     field.name in json_fields
                     and isinstance(value, str)
@@ -187,7 +175,6 @@ class ModelView(AdminView, ActionsMixin):
                     try:
                         value = json.loads(value)
                     except (json.JSONDecodeError, ValueError):
-                        # If JSON parsing fails, keep as string (will likely cause validation error)
                         pass
 
                 form_data[field.name] = value
@@ -199,7 +186,7 @@ class ModelView(AdminView, ActionsMixin):
         if not self.database_provider:
             return await super().list_view()
 
-        page = int(request.args.get("page", 0))  # 0-based, matching Flask-Admin
+        page = int(request.args.get("page", 0))
         per_page = min(int(request.args.get("per_page", self.page_size)), 100)
         search = request.args.get("search", "")
         sort_by = request.args.get("sort", "")
@@ -269,18 +256,14 @@ class ModelView(AdminView, ActionsMixin):
                         if key not in self.form_extra_fields
                     }
 
-                # Create record (don't commit yet so hook can modify)
                 model = await self.database_provider.create(
                     self.model, session, commit=False, **form_data
                 )
 
-                # Call pre-commit hook
                 await self.on_model_change(form, model, is_created=True)
 
-                # Commit the transaction
                 await session.commit()
 
-                # Call post-commit hook
                 await self.after_model_change(form, model, is_created=True)
 
                 await flash(f"{self.name} created successfully!", "success")
@@ -305,16 +288,12 @@ class ModelView(AdminView, ActionsMixin):
         if not self.database_provider:
             return await super().edit_view(id)
 
-        # Get primary key fields and build pk_values dict
         pk_fields = self.database_provider.get_primary_key_fields(self.model)
         if len(pk_fields) == 1:
             pk_values = {pk_fields[0]: id}
         else:
-            # For composite keys, this would need to be handled differently
-            # For now, assume single primary key
             raise ValueError("Composite primary keys not yet supported in edit_view")
 
-        # First, get the item to edit (separate session context)
         async with self.get_database_session() as session:
             item = await self.database_provider.get_by_pk(
                 self.model, session, pk_values
@@ -324,7 +303,6 @@ class ModelView(AdminView, ActionsMixin):
                 await flash(f"{self.name} not found", "error")
                 return redirect(self.get_list_url())
 
-        # Create form with the retrieved item
         form = self.form_generator.create_form(
             self.model,
             self.database_provider,
@@ -339,7 +317,6 @@ class ModelView(AdminView, ActionsMixin):
                     {"csrf_token"} | set(pk_fields) | set(self.form_extra_fields or {})
                 )
 
-                # Process form data with proper object conversion
                 all_form_data = self.process_form_data(form)
                 form_data = {
                     key: value
@@ -347,18 +324,14 @@ class ModelView(AdminView, ActionsMixin):
                     if key not in excluded_fields
                 }
 
-                # Update record (don't commit yet so hook can modify)
                 model = await self.database_provider.update(
                     self.model, session, pk_values, commit=False, **form_data
                 )
 
-                # Call pre-commit hook
                 await self.on_model_change(form, model, is_created=False)
 
-                # Commit the transaction
                 await session.commit()
 
-                # Call post-commit hook
                 await self.after_model_change(form, model, is_created=False)
 
                 await flash(f"{self.name} updated successfully!", "success")
@@ -384,13 +357,10 @@ class ModelView(AdminView, ActionsMixin):
             return await super().details_view(id)
 
         async with self.get_database_session() as session:
-            # Get primary key fields and build pk_values dict
             pk_fields = self.database_provider.get_primary_key_fields(self.model)
             if len(pk_fields) == 1:
                 pk_values = {pk_fields[0]: id}
             else:
-                # For composite keys, this would need to be handled differently
-                # For now, assume single primary key
                 raise ValueError(
                     "Composite primary keys not yet supported in details_view"
                 )
@@ -418,18 +388,14 @@ class ModelView(AdminView, ActionsMixin):
             return await super().delete_view(id)
 
         async with self.get_database_session() as session:
-            # Get primary key fields and build pk_values dict
             pk_fields = self.database_provider.get_primary_key_fields(self.model)
             if len(pk_fields) == 1:
                 pk_values = {pk_fields[0]: id}
             else:
-                # For composite keys, this would need to be handled differently
-                # For now, assume single primary key
                 raise ValueError(
                     "Composite primary keys not yet supported in delete_view"
                 )
 
-            # Get model instance before delete for hooks
             model = await self.database_provider.get_model_by_pk(
                 self.model, session, pk_values
             )
@@ -438,18 +404,14 @@ class ModelView(AdminView, ActionsMixin):
                 await flash(f"{self.name} not found", "error")
                 return redirect(self.get_list_url())
 
-            # Call pre-delete hook
             await self.on_model_delete(model)
 
-            # Delete (without commit)
             await self.database_provider.delete(
                 self.model, session, pk_values, commit=False
             )
 
-            # Commit the transaction
             await session.commit()
 
-            # Call post-delete hook
             await self.after_model_delete(model)
 
             await flash(f"{self.name} deleted successfully!", "success")
@@ -494,25 +456,21 @@ class ModelView(AdminView, ActionsMixin):
         if value is None:
             return ""
 
-        # Basic formatting for common types
         if isinstance(value, bool):
             return "✓" if value else "✗"
-        elif hasattr(value, "strftime"):  # datetime
+        elif hasattr(value, "strftime"):
             return value.strftime("%Y-%m-%d %H:%M")
         elif isinstance(value, (dict, list)):
             import json
 
             try:
-                # Pretty format JSON objects for better readability
                 json_str = json.dumps(
                     value, indent=None, separators=(",", ":"), default=str
                 )
-                # Truncate very long JSON for list view
                 if len(json_str) > 100:
                     return json_str[:97] + "..."
                 return json_str
             except (TypeError, ValueError):
-                # Fallback to string representation if JSON serialization fails
                 str_repr = str(value)
                 return str_repr[:100] + "..." if len(str_repr) > 100 else str_repr
 

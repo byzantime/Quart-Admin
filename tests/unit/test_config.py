@@ -36,7 +36,6 @@ class TestQuartAdminConfig:
         assert config.default_page_size == 50
         assert config.enable_search is False
 
-        # Defaults should still apply for unspecified values
         assert config.enable_batch_actions is True
         assert config.csrf_protection is True
 
@@ -46,8 +45,6 @@ class TestQuartAdminConfig:
         config2 = QuartAdminConfig(name="test1")
         config3 = QuartAdminConfig(name="test2")
 
-        # Should be equal when values are the same
         assert config1 == config2
 
-        # Should not be equal when values differ
         assert config1 != config3

@@ -39,20 +39,16 @@ class WTFormsGenerator(FormGenerator):
             excluded_columns = []
         base_class = FlaskForm
 
-        # Get model fields from database provider
         class DynamicForm(base_class):
             pass
 
-        # Get column information from the model
         model_fields = database_provider.get_model_fields(model)
         if not model_fields:
             model_fields = []
 
-        # Create fields using type mapping
         for field_info in model_fields:
             column_name = field_info["name"]
 
-            # Skip excluded columns
             if excluded_columns and column_name in excluded_columns:
                 continue
 
@@ -66,9 +62,7 @@ class WTFormsGenerator(FormGenerator):
             for field_name, field in extra_fields.items():
                 setattr(DynamicForm, field_name, field)
 
-        # Convert dictionary obj to SimpleNamespace for WTForms compatibility
         if obj and isinstance(obj, dict):
-            # Convert Python objects to appropriate form field values
             converted_obj = {}
             json_fields = {
                 field_info["name"]: field_info["type"]
@@ -77,7 +71,6 @@ class WTFormsGenerator(FormGenerator):
             }
 
             for column_name, value in obj.items():
-                # Convert JSON/dict/list objects to strings for TextAreaField
                 if (
                     column_name in json_fields
                     and value is not None
@@ -87,7 +80,6 @@ class WTFormsGenerator(FormGenerator):
                         value = json.dumps(value, indent=2, default=str)
                     except (TypeError, ValueError):
                         value = str(value)
-                # For all other types, let WTForms handle them natively
                 converted_obj[column_name] = value
 
             obj = SimpleNamespace(**converted_obj)
@@ -130,7 +122,6 @@ class WTFormsGenerator(FormGenerator):
         else:
             validators.append(OptionalValidator())
 
-        # Map database types to form fields
         if "int" in column_type:
             return IntegerField(
                 column_name.replace("_", " ").title(), validators=validators, **kwargs
@@ -142,7 +133,6 @@ class WTFormsGenerator(FormGenerator):
                 column_name.replace("_", " ").title(), validators=validators, **kwargs
             )
         elif "json" in column_type:
-            # JSON fields use TextAreaField but with custom processing
             return TextAreaField(
                 column_name.replace("_", " ").title(), validators=validators, **kwargs
             )
@@ -154,12 +144,9 @@ class WTFormsGenerator(FormGenerator):
                 **kwargs,
             )
         else:
-            # Default to string field
             field_validators = validators.copy()
             if "varchar" in column_type or "char" in column_type:
-                # Extract length if available
                 try:
-                    # Simple regex to extract length - would be more robust
                     import re
 
                     match = re.search(r"\((\d+)\)", column_type)

@@ -48,7 +48,6 @@ def mock_database_provider():
     """Create a mock database provider."""
     provider = MagicMock(spec=DatabaseProvider)
 
-    # Set up default return values for common methods
     provider.get_all.return_value = []
     provider.get_by_pk.return_value = None
     provider.create.return_value = {"id": 1}
@@ -81,7 +80,3 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "requires_quart_auth: mark test as requiring Quart-Auth"
     )
-
-
-# Note: We no longer auto-skip tests based on missing dependencies since we use mocking.
-# Tests that require actual dependencies should handle missing deps with pytest.skip() internally.

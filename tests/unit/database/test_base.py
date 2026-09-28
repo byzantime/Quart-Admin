@@ -26,7 +26,6 @@ class TestDatabaseProvider:
         assert issubclass(DatabaseProvider, ABC)
         assert hasattr(DatabaseProvider, "__abstractmethods__")
 
-        # Check that all expected methods are abstract
         expected_abstract_methods = {
             "get_session",
             "get_all",
@@ -79,7 +78,6 @@ class TestDatabaseProvider:
             def get_model_relationships(self, model: Type) -> Dict[str, Dict[str, Any]]:
                 return {}
 
-        # Should be able to instantiate concrete implementation
         provider = ConcreteDatabaseProvider()
         assert isinstance(provider, DatabaseProvider)
 
@@ -95,8 +93,6 @@ class TestDatabaseProvider:
             ) -> List[Dict[str, Any]]:
                 return []
 
-            # Missing other required methods
-
         with pytest.raises(TypeError):
             PartialDatabaseProvider()
 
@@ -104,54 +100,45 @@ class TestDatabaseProvider:
         """Test that the abstract methods have correct signatures."""
         import inspect
 
-        # Test get_session signature
         sig = inspect.signature(DatabaseProvider.get_session)
-        assert len(sig.parameters) == 1  # self only
+        assert len(sig.parameters) == 1
         assert sig.return_annotation == AsyncGenerator[Any, None]
 
-        # Test get_all signature
         sig = inspect.signature(DatabaseProvider.get_all)
         params = list(sig.parameters.keys())
         assert params == ["self", "model", "session", "filters"]
         assert sig.return_annotation == List[Dict[str, Any]]
 
-        # Test get_by_pk signature
         sig = inspect.signature(DatabaseProvider.get_by_pk)
         params = list(sig.parameters.keys())
         assert params == ["self", "model", "session", "pk_values"]
         assert sig.return_annotation == Optional[Dict[str, Any]]
 
-        # Test create signature
         sig = inspect.signature(DatabaseProvider.create)
         params = list(sig.parameters.keys())
         assert params == ["self", "model", "session", "data"]
         assert sig.return_annotation == Dict[str, Any]
 
-        # Test update signature
         sig = inspect.signature(DatabaseProvider.update)
         params = list(sig.parameters.keys())
         assert params == ["self", "model", "session", "pk_values", "data"]
         assert sig.return_annotation == Dict[str, Any]
 
-        # Test delete signature
         sig = inspect.signature(DatabaseProvider.delete)
         params = list(sig.parameters.keys())
         assert params == ["self", "model", "session", "pk_values"]
         assert sig.return_annotation is bool
 
-        # Test count signature
         sig = inspect.signature(DatabaseProvider.count)
         params = list(sig.parameters.keys())
         assert params == ["self", "model", "session", "filters"]
         assert sig.return_annotation is int
 
-        # Test get_model_fields signature
         sig = inspect.signature(DatabaseProvider.get_model_fields)
         params = list(sig.parameters.keys())
         assert params == ["self", "model"]
         assert sig.return_annotation == List[Dict[str, Any]]
 
-        # Test get_model_relationships signature
         sig = inspect.signature(DatabaseProvider.get_model_relationships)
         params = list(sig.parameters.keys())
         assert params == ["self", "model"]

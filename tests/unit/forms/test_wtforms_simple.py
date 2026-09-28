@@ -17,14 +17,12 @@ class TestWTFormsGeneratorSimple:
         """Set up test fixtures."""
         self.generator = WTFormsGenerator()
 
-        # Mock database provider
         self.mock_db_provider = MagicMock()
         self.mock_model = MagicMock()
         self.mock_model.__name__ = "TestModel"
 
     def test_json_object_conversion_logic(self):
         """Test the JSON object conversion logic directly."""
-        # Set up mock model fields
         model_fields = [
             {"name": "id", "type": "INTEGER", "nullable": False, "primary_key": True},
             {
@@ -47,7 +45,6 @@ class TestWTFormsGeneratorSimple:
             },
         ]
 
-        # Test data with dict objects
         test_obj = {
             "id": 1,
             "name": "Test Item",
@@ -55,17 +52,14 @@ class TestWTFormsGeneratorSimple:
             "settings": {"theme": "dark", "notifications": True},
         }
 
-        # Test the conversion logic directly
         json_fields = {
             field["name"]: field["type"]
             for field in model_fields
             if "json" in field.get("type", "").lower()
         }
 
-        # Simulate the conversion logic from create_form
         converted_obj = {}
         for column_name, value in test_obj.items():
-            # Convert JSON/dict/list objects to strings for TextAreaField
             if (
                 column_name in json_fields
                 and value is not None
@@ -75,18 +69,14 @@ class TestWTFormsGeneratorSimple:
                     value = json.dumps(value, indent=2, default=str)
                 except (TypeError, ValueError):
                     value = str(value)
-            # For all other types, let WTForms handle them natively
             converted_obj[column_name] = value
 
-        # Verify conversions
-        assert converted_obj["id"] == 1  # Not converted
-        assert converted_obj["name"] == "Test Item"  # Not converted
+        assert converted_obj["id"] == 1
+        assert converted_obj["name"] == "Test Item"
 
-        # JSON fields should be converted to strings
         assert isinstance(converted_obj["metadata"], str)
         assert isinstance(converted_obj["settings"], str)
 
-        # Verify JSON is properly formatted
         parsed_metadata = json.loads(converted_obj["metadata"])
         assert parsed_metadata == {"key": "value", "nested": {"data": 123}}
 
@@ -123,7 +113,6 @@ class TestWTFormsGeneratorSimple:
             if "json" in field.get("type", "").lower()
         }
 
-        # Should identify all JSON variants
         assert "metadata" in json_fields
         assert "settings" in json_fields
         assert "config" in json_fields
@@ -158,7 +147,6 @@ class TestWTFormsGeneratorSimple:
                 value = json.dumps(value, indent=2, default=str)
             converted_obj[column_name] = value
 
-        # None should be preserved
         assert converted_obj["metadata"] is None
 
     def test_json_string_preservation(self):
@@ -191,13 +179,11 @@ class TestWTFormsGeneratorSimple:
                 value = json.dumps(value, indent=2, default=str)
             converted_obj[column_name] = value
 
-        # String should be preserved as-is
         assert converted_obj["metadata"] == json_string
 
     def test_json_serialization_fallback(self):
         """Test fallback behavior when JSON serialization fails."""
 
-        # Create a non-serializable object
         class NonSerializable:
             def __str__(self):
                 return "non_serializable_object"
@@ -232,7 +218,6 @@ class TestWTFormsGeneratorSimple:
                     value = str(value)
             converted_obj[column_name] = value
 
-        # Should fallback to string representation (JSON serializes the string with default=str)
         assert converted_obj["metadata"] == '"non_serializable_object"'
 
     def test_get_field_for_column_json_logic(self):
@@ -244,10 +229,8 @@ class TestWTFormsGeneratorSimple:
             "primary_key": False,
         }
 
-        # Test the type mapping logic directly
         column_type = json_field_info["type"].lower()
 
-        # This should match the logic in get_field_for_column
         if "json" in column_type:
             expected_field_type = "TextAreaField"
         else:
@@ -264,10 +247,8 @@ class TestWTFormsGeneratorSimple:
             "primary_key": False,
         }
 
-        # Test the type mapping logic directly
         column_type = jsonb_field_info["type"].lower()
 
-        # This should match the logic in get_field_for_column
         if "json" in column_type:
             expected_field_type = "TextAreaField"
         else:
@@ -278,19 +259,15 @@ class TestWTFormsGeneratorSimple:
     def test_import_error_handling(self):
         """Test proper error handling when WTForms dependencies are not available."""
 
-        # Mock the import that happens inside create_form method
         def mock_import(name, *args, **kwargs):
             if name == "flask_wtf":
                 raise ImportError("No module named 'flask_wtf'")
-            # Allow other imports to work normally
             return __import__(name, *args, **kwargs)
 
         with patch("builtins.__import__", side_effect=mock_import):
             with pytest.raises(ImportError) as exc_info:
-                # Call the actual method that should handle the import error
                 self.generator.create_form(self.mock_model, self.mock_db_provider)
 
-            # Verify the proper error message is raised
             assert "Flask-WTF and WTForms are not installed" in str(exc_info.value)
             assert "pip install quart-admin[wtforms]" in str(exc_info.value)
 
@@ -325,7 +302,6 @@ class TestWTFormsGeneratorSimple:
             "secret": "sensitive_data",
         }
 
-        # Test exclusion logic
         excluded_columns = ["secret", "metadata"]
         json_fields = {
             field["name"]: field["type"]
@@ -333,10 +309,8 @@ class TestWTFormsGeneratorSimple:
             if "json" in field.get("type", "").lower()
         }
 
-        # Simulate form creation with exclusions
         converted_obj = {}
         for column_name, value in test_obj.items():
-            # Skip excluded columns (like the actual implementation would)
             if column_name in excluded_columns:
                 continue
 
@@ -348,11 +322,9 @@ class TestWTFormsGeneratorSimple:
                 value = json.dumps(value, indent=2, default=str)
             converted_obj[column_name] = value
 
-        # Verify excluded columns are not present
         assert "secret" not in converted_obj
         assert "metadata" not in converted_obj
 
-        # Verify non-excluded columns are present
         assert "id" in converted_obj
         assert "name" in converted_obj
         assert converted_obj["id"] == 1
@@ -376,12 +348,10 @@ class TestWTFormsGeneratorSimple:
             },
         ]
 
-        # Simulate primary key field detection logic
         primary_key_fields = [
             field["name"] for field in model_fields if field.get("primary_key", False)
         ]
 
-        # Verify primary key detection
         assert "id" in primary_key_fields
         assert "uuid" in primary_key_fields
         assert "name" not in primary_key_fields
@@ -389,7 +359,6 @@ class TestWTFormsGeneratorSimple:
 
     def test_field_validation_setup(self):
         """Test that field validation is set up correctly based on column properties."""
-        # Test nullable field (should get OptionalValidator)
         nullable_field = {
             "name": "description",
             "type": "TEXT",
@@ -398,7 +367,6 @@ class TestWTFormsGeneratorSimple:
             "default": None,
         }
 
-        # Test non-nullable field without default (should get DataRequired)
         required_field = {
             "name": "name",
             "type": "VARCHAR(100)",
@@ -407,7 +375,6 @@ class TestWTFormsGeneratorSimple:
             "default": None,
         }
 
-        # Test non-nullable field with default (should get OptionalValidator)
         field_with_default = {
             "name": "status",
             "type": "VARCHAR(20)",
@@ -416,7 +383,6 @@ class TestWTFormsGeneratorSimple:
             "default": "active",
         }
 
-        # Test the validation logic
         def should_be_required(field_info):
             return (
                 not field_info.get("nullable", True)
@@ -424,15 +390,13 @@ class TestWTFormsGeneratorSimple:
                 and field_info.get("default") is None
             )
 
-        # Verify validation requirements
-        assert not should_be_required(nullable_field)  # Optional
-        assert should_be_required(required_field)  # Required
-        assert not should_be_required(field_with_default)  # Optional (has default)
+        assert not should_be_required(nullable_field)
+        assert should_be_required(required_field)
+        assert not should_be_required(field_with_default)
 
     def test_different_field_types_mapping(self):
         """Test that different column types map to correct WTForms fields."""
         field_type_mappings = [
-            # (column_type, expected_wtforms_field_type)
             ("INTEGER", "IntegerField"),
             ("BIGINT", "IntegerField"),
             ("BOOLEAN", "BooleanField"),
@@ -445,11 +409,10 @@ class TestWTFormsGeneratorSimple:
             ("TIMESTAMP", "DateTimeField"),
             ("VARCHAR(100)", "StringField"),
             ("CHAR(10)", "StringField"),
-            ("STRING", "StringField"),  # Default case
+            ("STRING", "StringField"),
         ]
 
         for column_type, expected_field in field_type_mappings:
-            # Test the type mapping logic
             column_type_lower = column_type.lower()
 
             if "int" in column_type_lower:
@@ -463,7 +426,7 @@ class TestWTFormsGeneratorSimple:
             elif "datetime" in column_type_lower or "timestamp" in column_type_lower:
                 assert expected_field == "DateTimeField"
             else:
-                assert expected_field == "StringField"  # Default
+                assert expected_field == "StringField"
 
 
 class TestWTFormsIntegration:
@@ -478,7 +441,6 @@ class TestWTFormsIntegration:
 
     def test_complete_form_creation_workflow(self):
         """Test complete object conversion workflow with various field types."""
-        # Set up realistic model fields
         model_fields = [
             {"name": "id", "type": "INTEGER", "nullable": False, "primary_key": True},
             {
@@ -513,7 +475,6 @@ class TestWTFormsIntegration:
             },
         ]
 
-        # Test data with mixed Python objects
         test_obj = {
             "id": 1,
             "name": "Test Item",
@@ -527,17 +488,14 @@ class TestWTFormsIntegration:
             "description": "A test item description",
         }
 
-        # Test the object conversion logic directly
         json_fields = {
             field["name"]: field["type"]
             for field in model_fields
             if "json" in field.get("type", "").lower()
         }
 
-        # Apply the same conversion logic used in create_form
         converted_obj = {}
         for column_name, value in test_obj.items():
-            # Convert JSON/dict/list objects to strings for TextAreaField
             if (
                 column_name in json_fields
                 and value is not None
@@ -549,17 +507,14 @@ class TestWTFormsIntegration:
                     value = str(value)
             converted_obj[column_name] = value
 
-        # Verify conversion results
         assert len(converted_obj) == 6
 
-        # Verify non-JSON fields are unchanged
         assert converted_obj["id"] == 1
         assert converted_obj["name"] == "Test Item"
         assert converted_obj["is_active"] is True
         assert converted_obj["created_at"] == datetime(2023, 1, 1, 12, 0, 0)
         assert converted_obj["description"] == "A test item description"
 
-        # Verify JSON field was serialized
         assert isinstance(converted_obj["metadata"], str)
         parsed_metadata = json.loads(converted_obj["metadata"])
         assert parsed_metadata == {
@@ -570,7 +525,6 @@ class TestWTFormsIntegration:
 
     def test_round_trip_json_processing(self):
         """Test that JSON objects can be serialized and deserialized correctly."""
-        # Complex nested JSON data
         original_data = {
             "user": {
                 "name": "John Doe",
@@ -593,14 +547,11 @@ class TestWTFormsIntegration:
             "null_value": None,
         }
 
-        # Step 1: Serialize for form display (WTForms direction)
         serialized = json.dumps(original_data, indent=2, default=str)
         assert isinstance(serialized, str)
 
-        # Step 2: Deserialize from form input (ModelView direction)
         deserialized = json.loads(serialized)
 
-        # Verify round-trip accuracy
         assert deserialized == original_data
         assert deserialized["user"]["name"] == "John Doe"
         assert deserialized["user"]["preferences"]["theme"] == "dark"
@@ -630,18 +581,12 @@ class TestWTFormsIntegration:
         ]
         self.mock_db_provider.get_model_fields.return_value = model_fields
 
-        # Test with various problematic data
         test_cases = [
-            # Non-serializable object
-            {"name": "Test 1", "metadata": lambda x: x},  # Function object
-            # Circular reference (would cause issues in real JSON)
+            {"name": "Test 1", "metadata": lambda x: x},
             {
                 "name": "Test 2",
-                "metadata": {
-                    "self": None
-                },  # Simplified - real circular ref would be complex
+                "metadata": {"self": None},
             },
-            # Very large nested structure
             {
                 "name": "Test 3",
                 "metadata": {
@@ -652,7 +597,6 @@ class TestWTFormsIntegration:
 
         for i, test_obj in enumerate(test_cases):
             try:
-                # Simulate the conversion logic
                 converted_obj = {}
                 for column_name, value in test_obj.items():
                     if (
@@ -666,7 +610,6 @@ class TestWTFormsIntegration:
                             value = str(value)
                     converted_obj[column_name] = value
 
-                # Should not raise exceptions
                 assert "name" in converted_obj
                 assert "metadata" in converted_obj
                 assert isinstance(converted_obj["metadata"], str)
@@ -676,7 +619,6 @@ class TestWTFormsIntegration:
 
     def test_performance_with_large_objects(self):
         """Test performance characteristics with large JSON objects."""
-        # Create a large nested object
         large_data = {
             "users": [
                 {
@@ -698,26 +640,21 @@ class TestWTFormsIntegration:
             },
         }
 
-        # Test serialization performance
         import time
 
         start_time = time.time()
         serialized = json.dumps(large_data, indent=2, default=str)
         serialization_time = time.time() - start_time
 
-        # Test deserialization performance
         start_time = time.time()
         deserialized = json.loads(serialized)
         deserialization_time = time.time() - start_time
 
-        # Verify functionality
         assert len(deserialized["users"]) == 10
         assert len(deserialized["config"]) == 100
         assert deserialized["users"][0]["name"] == "User 0"
 
-        # Performance should be reasonable (adjust thresholds as needed)
-        assert serialization_time < 1.0  # Should complete in under 1 second
-        assert deserialization_time < 1.0  # Should complete in under 1 second
+        assert serialization_time < 1.0
+        assert deserialization_time < 1.0
 
-        # Verify data integrity
         assert deserialized == large_data
