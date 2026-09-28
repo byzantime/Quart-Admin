@@ -151,11 +151,11 @@ class TestDeleteSelectedAction:
         view, mock_db, _ = view_with_mock_db
         app = Quart(__name__)
         app.config["SECRET_KEY"] = "test"
-        with patch.object(
-            view, "on_model_delete", new_callable=AsyncMock
-        ) as pre_hook, patch.object(
-            view, "after_model_delete", new_callable=AsyncMock
-        ) as post_hook:
+        pre_hook = AsyncMock()
+        post_hook = AsyncMock()
+        with patch.multiple(
+            view, on_model_delete=pre_hook, after_model_delete=post_hook
+        ):
             async with app.app_context():
                 with patch("quart_admin.views.model.flash", new_callable=AsyncMock):
                     await view.delete_selected(["1", "2"])
