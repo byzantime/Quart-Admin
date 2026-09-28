@@ -73,6 +73,9 @@ class ModelView(AdminView, ActionsMixin):
     async def on_model_change(self, form, model, is_created: bool) -> None:
         """Called before model is created/updated. Override to add custom logic.
 
+        ``form_extra_fields`` values are excluded from create()/update()
+        kwargs; read them off ``form`` here to hash/transform onto ``model``.
+
         Args:
             form: The form with validated data
             model: The model instance being created or updated
