@@ -124,9 +124,8 @@ class TestDatabaseImportHandling:
 
         # Check that __all__ only contains what's actually importable
         for item_name in db_module.__all__:
-            assert hasattr(db_module, item_name), (
-                f"{item_name} in __all__ but not available"
-            )
+            message = f"{item_name} in __all__ but not available"
+            assert hasattr(db_module, item_name), message
 
     def test_no_leftover_import_errors_in_sqlalchemy_provider(self):
         """Test that SQLAlchemy provider doesn't contain old ImportError handling."""
@@ -142,12 +141,10 @@ class TestDatabaseImportHandling:
             source = inspect.getsource(SQLAlchemyProvider)
 
             # Should not contain any ImportError handling for SQLAlchemy
-            assert "ImportError" not in source, (
-                "SQLAlchemyProvider still contains ImportError handling"
-            )
-            assert "pip install quart-admin[sqlalchemy]" not in source, (
-                "Old error message still present"
-            )
+            message = "SQLAlchemyProvider still contains ImportError handling"
+            assert "ImportError" not in source, message
+            message = "Old error message still present"
+            assert "pip install quart-admin[sqlalchemy]" not in source, message
 
         except ImportError:
             pytest.skip("SQLAlchemy not available, cannot test provider internals")

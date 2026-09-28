@@ -46,6 +46,7 @@ all = [
 
 [dependency-groups]
 dev = [
+    "black>=25.1.0",
     "ruff>=0.12.7",
     "pytest>=8.3.4",
     "pytest-asyncio>=0.26.0",

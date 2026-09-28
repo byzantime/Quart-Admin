@@ -1,5 +1,6 @@
 """Tests for batch action registration and execution."""
 
+from unittest.mock import DEFAULT
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -173,16 +174,17 @@ class TestDeleteSelectedAction:
         view, mock_db, _ = view_with_mock_db
         app = Quart(__name__)
         app.config["SECRET_KEY"] = "test"
-        with patch.object(
-            view, "on_model_delete", new_callable=AsyncMock
-        ) as pre_hook, patch.object(
-            view, "after_model_delete", new_callable=AsyncMock
-        ) as post_hook:
+        with patch.multiple(
+            view,
+            on_model_delete=DEFAULT,
+            after_model_delete=DEFAULT,
+            new_callable=AsyncMock,
+        ) as hooks:
             async with app.app_context():
                 with patch("quart_admin.views.model.flash", new_callable=AsyncMock):
                     await view.delete_selected(["1", "2"])
-        assert pre_hook.call_count == 2
-        assert post_hook.call_count == 2
+        assert hooks["on_model_delete"].call_count == 2
+        assert hooks["after_model_delete"].call_count == 2
 
     @pytest.mark.asyncio
     async def test_delete_selected_flashes_count(self, view_with_mock_db):
