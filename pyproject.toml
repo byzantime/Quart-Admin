@@ -16,12 +16,11 @@ classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 keywords = ["quart", "admin", "crud", "async", "web", "interface"]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "quart>=0.20.0",
 ]
@@ -50,6 +49,7 @@ dev = [
     "ruff>=0.12.7",
     "pytest>=8.3.4",
     "pytest-asyncio>=0.26.0",
+    "stifle==1.0.0",
 ]
 test = [
     "flask-admin>=2.0.0",
