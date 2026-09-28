@@ -83,6 +83,9 @@ ignore = [
 [tool.ruff.lint.isort]
 force-single-line = true
 
+[tool.stifle]
+max-doc-lines = 7
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

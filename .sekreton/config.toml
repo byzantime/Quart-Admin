@@ -4,7 +4,7 @@ schema = 1
 run = ["uv run ruff check .", "uv run ruff format --check ."]
 
 [jobs.stifle]
-run = "uv run stifle check --isolated --max-doc-lines 7 src tests"
+run = "uv run stifle check src tests"
 
 [jobs.pytest]
 run = "uv run pytest tests/ -v"
