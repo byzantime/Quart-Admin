@@ -30,15 +30,11 @@ class QuartAdmin:
         form_generator: Optional[FormGenerator] = None,
         **kwargs,
     ):
-        """Initialize QuartAdmin extension.
+        """Initialize the QuartAdmin extension.
 
-        Args:
-            app: Quart application instance
-            config: Configuration object
-            auth_provider: Authentication provider instance
-            database_provider: Database provider instance
-            form_generator: Form generator instance
-            **kwargs: Additional configuration options
+        ``app`` is bound immediately if given. ``config`` defaults to a
+        ``QuartAdminConfig`` built from ``**kwargs``. The auth, database and
+        form providers are optional plug-ins.
         """
         self.config = config or QuartAdminConfig(**kwargs)
         self.auth_provider = auth_provider

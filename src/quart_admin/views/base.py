@@ -29,15 +29,11 @@ class AdminView:
         auth_provider: Optional[AuthProvider] = None,
         database_provider: Optional[DatabaseProvider] = None,
     ):
-        """Initialize admin view.
+        """Initialize the admin view.
 
-        Args:
-            name: Human-readable name for the view
-            category: Category for grouping views
-            endpoint: Blueprint endpoint name (defaults to name)
-            url: URL pattern (defaults to name)
-            auth_provider: Authentication provider instance
-            database_provider: Database provider instance
+        ``name`` is the human-readable name; ``endpoint`` (blueprint endpoint)
+        and ``url`` (URL pattern) default to it. ``category`` groups views in
+        the menu. The auth and database providers are optional.
         """
         self.name = name
         self.category = category

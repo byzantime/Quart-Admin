@@ -114,16 +114,10 @@ class SQLAlchemyProvider(DatabaseProvider):
     async def create(
         self, model: Type, session: Any, commit: bool = True, **data
     ) -> Any:
-        """Create new SQLAlchemy record.
+        """Create a new ``model`` record from ``**data`` in the async ``session``.
 
-        Args:
-            model: The SQLAlchemy model class
-            session: The async session
-            commit: Whether to commit the transaction (default True)
-            **data: Field values for the new record
-
-        Returns:
-            The created model instance
+        Commits the transaction unless ``commit`` is False. Returns the created
+        model instance.
         """
         instance = model(**data)
         session.add(instance)
@@ -140,17 +134,11 @@ class SQLAlchemyProvider(DatabaseProvider):
         commit: bool = True,
         **data,
     ) -> Any:
-        """Update existing SQLAlchemy record.
+        """Update the ``model`` record identified by ``pk_values`` with ``**data``.
 
-        Args:
-            model: The SQLAlchemy model class
-            session: The async session
-            pk_values: Primary key field name to value mapping
-            commit: Whether to commit the transaction (default True)
-            **data: Field values to update
-
-        Returns:
-            The updated model instance
+        ``pk_values`` maps primary key field names to values. Commits the
+        transaction unless ``commit`` is False. Returns the updated model
+        instance; raises ``ValueError`` if no record matches.
         """
         query = select(model)
         for key, value in pk_values.items():
@@ -195,16 +183,11 @@ class SQLAlchemyProvider(DatabaseProvider):
     async def delete(
         self, model: Type, session: Any, pk_values: Dict[str, Any], commit: bool = True
     ) -> Optional[Any]:
-        """Delete SQLAlchemy record by primary key values.
+        """Delete the ``model`` record identified by ``pk_values``.
 
-        Args:
-            model: The SQLAlchemy model class
-            session: The async session
-            pk_values: Primary key field name to value mapping
-            commit: Whether to commit the transaction (default True)
-
-        Returns:
-            The deleted model instance or None if not found
+        ``pk_values`` maps primary key field names to values. Commits the
+        transaction unless ``commit`` is False. Returns the deleted model
+        instance, or None if not found.
         """
         instance = await self.get_model_by_pk(model, session, pk_values)
 

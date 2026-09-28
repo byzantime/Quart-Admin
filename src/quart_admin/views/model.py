@@ -47,18 +47,11 @@ class ModelView(AdminView, ActionsMixin):
         form_generator: Optional[FormGenerator] = None,
         **kwargs,
     ):
-        """Initialize ModelView.
+        """Initialize a ModelView for the database ``model`` class.
 
-        Args:
-            model: Database model class
-            name: Human-readable name (defaults to model.__name__)
-            category: Category for grouping views
-            endpoint: Blueprint endpoint name
-            url: URL pattern
-            auth_provider: Authentication provider
-            database_provider: Database provider
-            form_generator: Form generator for creating/editing forms
-            **kwargs: Additional arguments for parent class
+        ``name`` defaults to ``model.__name__``. ``form_generator`` builds the
+        create/edit forms; the remaining arguments and ``**kwargs`` are passed
+        to ``AdminView``.
         """
         if name is None:
             name = model.__name__

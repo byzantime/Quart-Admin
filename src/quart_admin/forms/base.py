@@ -22,17 +22,11 @@ class FormGenerator(ABC):
         extra_fields: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> Any:
-        """Create form for model.
+        """Create a form instance for ``model``.
 
-        Args:
-            model: Database model class
-            database_provider: Database provider for model introspection
-            obj: Optional object to populate form with
-            excluded_columns: Optional list of columns to exclude
-            **kwargs: Additional form arguments
-
-        Returns:
-            Form instance
+        ``database_provider`` is used for model introspection. The form is
+        populated from ``obj`` if given, omits ``excluded_columns``, and passes
+        ``**kwargs`` on as additional form arguments.
         """
         pass
 
