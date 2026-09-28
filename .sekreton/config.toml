@@ -1,0 +1,10 @@
+schema = 1
+
+[jobs.lint]
+run = ["uv run ruff check .", "uv run black --check ."]
+
+[jobs.stifle]
+run = "uv run stifle check --isolated --max-doc-lines 7 src tests"
+
+[jobs.pytest]
+run = "uv run pytest tests/ -v"
