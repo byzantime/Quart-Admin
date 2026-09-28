@@ -46,7 +46,6 @@ all = [
 
 [dependency-groups]
 dev = [
-    "black>=25.1.0",
     "ruff>=0.12.7",
     "pytest>=8.3.4",
     "pytest-asyncio>=0.26.0",
@@ -54,11 +53,6 @@ dev = [
 test = [
     "flask-admin>=2.0.0",
 ]
-
-[tool.black]
-line-length = 88
-target-version = ['py38']
-include = '\.pyi?$'
 
 [tool.isort]
 profile = "black"
@@ -81,7 +75,7 @@ select = [
     "C4", # flake8-comprehensions
 ]
 ignore = [
-    "E501",  # line too long, handled by black
+    "E501",  # line too long, handled by ruff format
     "B008",  # do not perform function calls in argument defaults
 ]
 

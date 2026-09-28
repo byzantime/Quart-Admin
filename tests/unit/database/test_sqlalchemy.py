@@ -33,13 +33,9 @@ class TestSQLAlchemyProviderWithMocks:
                 "quart_admin.database.sqlalchemy.func", mock_func
             ), patch("quart_admin.database.sqlalchemy.inspect", mock_inspect), patch(
                 "quart_admin.database.sqlalchemy.or_", mock_or_
-            ), patch(
-                "quart_admin.database.sqlalchemy.desc", mock_desc
-            ), patch(
+            ), patch("quart_admin.database.sqlalchemy.desc", mock_desc), patch(
                 "quart_admin.database.sqlalchemy.Unicode", mock_unicode
-            ), patch(
-                "quart_admin.database.sqlalchemy.sql_cast", mock_sql_cast
-            ):
+            ), patch("quart_admin.database.sqlalchemy.sql_cast", mock_sql_cast):
                 yield {
                     "select": mock_select,
                     "func": mock_func,
